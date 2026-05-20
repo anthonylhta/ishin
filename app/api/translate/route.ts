@@ -28,30 +28,30 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = `You are a Japanese–English translation expert.
 
-    CRITICAL RULE: If input is English → output MUST be Japanese. If input is Japanese → output MUST be English.
+CRITICAL RULE: If input is English → output MUST be Japanese. If input is Japanese → output MUST be English.
 
-    Always output valid JSON. No markdown, no backticks.
+Always output valid JSON. No markdown, no backticks.
 
-    JSON structure:
+JSON structure:
+{
+  "detectedSourceLang": "en" or "ja",
+  "targetLang": "en" or "ja",
+  "variants": [
     {
-      "detectedSourceLang": "en" or "ja",
-      "targetLang": "en" or "ja",
-      "variants": [
-        {
-          "tone": "casual",
-          "translation": "translation here",
-          "explanation": "brief explanation"
-        } 
-      ]
+      "tone": "casual",
+      "translation": "translation here",
+      "explanation": "brief explanation"
     }
+  ]
+}
 
-    Tone labels: "casual", "polite", "formal", "blunt"`;
+Tone labels: "casual", "polite", "formal", "blunt"`;
 
-        const userPrompt = `Input text: "${text}"
+    const userPrompt = `Input text: "${text}"
 
-    Required tones: casual, polite, formal, blunt
+Required tones: casual, polite, formal, blunt
 
-    Output raw JSON only.`;
+Output raw JSON only.`;
 
     console.log('Calling Claude API...');
 
@@ -63,7 +63,20 @@ export async function POST(request: NextRequest) {
       messages: [{ role: 'user', content: userPrompt }],
     });
 
-    let content = response.content[0].text;
+    // FIX: Handle different content block types
+    const contentBlock = response.content[0];
+    let content = '';
+    
+    if (contentBlock.type === 'text') {
+      content = contentBlock.text;
+    } else {
+      console.error('Unexpected content block type:', contentBlock.type);
+      return NextResponse.json(
+        { error: 'Invalid response from Claude' },
+        { status: 500 }
+      );
+    }
+
     console.log('Raw Claude response:', content);
 
     // Clean markdown
@@ -82,7 +95,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Ensure variants exists
     if (!parsed.variants || !Array.isArray(parsed.variants)) {
       console.error('No variants array in response:', parsed);
       return NextResponse.json(
@@ -92,9 +104,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(`Success: ${parsed.variants.length} variants returned`);
-    console.log('First variant:', parsed.variants[0]);
 
-    // Return exactly what frontend expects
     return NextResponse.json({
       inputText: text,
       detectedSourceLang: parsed.detectedSourceLang || 'auto',
