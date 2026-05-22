@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ChatMessage as ChatMessageType } from '@/hooks/useChatStorage';
+import { ChatMessage as ChatMessageType } from '@/hooks/useCloudStorage';
 
 interface Props {
   message: ChatMessageType;

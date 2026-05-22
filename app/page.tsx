@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { useChatStorage } from '@/hooks/useChatStorage';
+import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
+import { useCloudStorage } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
 import Toast from '@/components/Toast';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -16,13 +17,14 @@ const TONES = [
 type ToneId = typeof TONES[number]['id'];
 
 export default function Home() {
+  const { isSignedIn, isLoaded } = useUser();
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('polite');
   const [isLoading, setIsLoading] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   
-  const { groupedMessages, addUserMessage, addAssistantMessage, clearHistory, deleteMessage, toggleGroup } = useChatStorage();
+  const { groupedMessages, addUserMessage, addAssistantMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -36,16 +38,14 @@ export default function Home() {
   };
 
   const handleTranslate = async () => {
-    if (!inputText.trim() || isLoading) return;
+    if (!inputText.trim() || isLoading || !isSignedIn) return;
 
     const userText = inputText;
     const tone = selectedTone;
     
     setIsLoading(true);
     
-    // Add user message
     addUserMessage(userText, tone);
-    
     setInputText('');
     
     if (inputRef.current) {
@@ -70,13 +70,10 @@ export default function Home() {
       const variant = data.variants.find((v: any) => v.tone === tone);
       
       if (variant) {
-        addAssistantMessage(variant.translation, tone, variant.explanation);
-      } else {
-        addAssistantMessage('Translation not available', tone, 'Please try a different tone');
+        await addAssistantMessage(variant.translation, tone, variant.explanation, userText);
       }
     } catch (err) {
       console.error(err);
-      addAssistantMessage('Translation failed. Please try again.', tone, 'Error occurred');
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
@@ -90,6 +87,54 @@ export default function Home() {
     }
   };
 
+  if (!isLoaded) {
+    return (
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--background)',
+        color: 'var(--text-primary)',
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (!isSignedIn) {
+    return (
+      <div style={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--background)',
+        color: 'var(--text-primary)',
+        gap: '20px',
+      }}>
+        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
+        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem' }}>TONE TRANSLATOR</h1>
+        <p style={{ color: 'var(--text-secondary)' }}>Sign in to save your translations</p>
+        <SignInButton mode="modal">
+          <button style={{
+            background: 'var(--accent-red)',
+            border: 'none',
+            borderRadius: '100px',
+            padding: '12px 32px',
+            color: 'white',
+            fontSize: '1rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}>
+            Sign In with Google
+          </button>
+        </SignInButton>
+      </div>
+    );
+  }
+
   return (
     <div style={{ 
       position: 'fixed',
@@ -101,7 +146,6 @@ export default function Home() {
       flexDirection: 'column',
       background: 'var(--background)',
     }}>
-      {/* Header */}
       <div style={{
         padding: '12px 16px',
         borderBottom: '1px solid var(--border)',
@@ -113,33 +157,39 @@ export default function Home() {
             <h1 style={{ fontSize: '1.25rem', margin: 0, fontFamily: 'var(--font-serif)' }}>TONE TRANSLATOR</h1>
             <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>敬意を込めて — With Precision</div>
           </div>
-          {groupedMessages.length > 0 && (
-            <button 
-              onClick={() => setShowClearModal(true)} 
-              style={{
-                background: 'none',
-                border: '1px solid var(--border)',
-                borderRadius: '8px',
-                padding: '4px 12px',
-                fontSize: '0.7rem',
-                color: 'var(--text-secondary)',
-                cursor: 'pointer',
-              }}
-            >
-              Clear
-            </button>
-          )}
+          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+            {groupedMessages.length > 0 && (
+              <button 
+                onClick={() => setShowClearModal(true)} 
+                style={{
+                  background: 'none',
+                  border: '1px solid var(--border)',
+                  borderRadius: '8px',
+                  padding: '4px 12px',
+                  fontSize: '0.7rem',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                }}
+              >
+                Clear
+              </button>
+            )}
+            <UserButton />
+          </div>
         </div>
       </div>
 
-      {/* Messages - Scrollable */}
       <div style={{
         flex: 1,
         overflowY: 'auto',
         padding: '16px',
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {groupedMessages.length === 0 ? (
+          {isLoadingHistory ? (
+            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+              Loading your history...
+            </div>
+          ) : groupedMessages.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
               <div>Your translations will appear here</div>
@@ -161,7 +211,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Input Area - Fixed at bottom */}
       <div style={{
         flexShrink: 0,
         borderTop: '1px solid var(--border)',
@@ -169,7 +218,6 @@ export default function Home() {
         padding: '16px',
       }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {/* Text input row */}
           <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
             <textarea
               ref={inputRef}
@@ -211,7 +259,6 @@ export default function Home() {
             </button>
           </div>
           
-          {/* Tone selector */}
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {TONES.map((tone) => (
               <button

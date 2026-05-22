@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { DM_Sans } from 'next/font/google';
+import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
 
 const dmSans = DM_Sans({ 
@@ -19,16 +20,18 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="dark">
-      <head>
-        <link 
-          href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&display=swap" 
-          rel="stylesheet"
-        />
-      </head>
-      <body className={`${dmSans.variable} font-sans antialiased`}>
-        {children}
-      </body>
-    </html>
+    <ClerkProvider afterSignOutUrl="/">
+      <html lang="en" className="dark">
+        <head>
+          <link
+            href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+        <body className={`${dmSans.variable} font-sans antialiased`}>
+          {children}
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

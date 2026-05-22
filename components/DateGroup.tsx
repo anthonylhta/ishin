@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import ChatMessage from './ChatMessage';
-import { ChatMessage as ChatMessageType } from '@/hooks/useChatStorage';
+import { ChatMessage as ChatMessageType } from '@/hooks/useCloudStorage';
 
 interface Props {
   title: string;
