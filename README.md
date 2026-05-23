@@ -2,7 +2,7 @@
 
 > Japanese ↔ English translation that gets the *tone* right — choose a politeness level and get a culturally aware translation, plus a short note on why it reads that way.
 
-**Live demo:** _(https://tone-translator-seven.vercel.app)_
+**Live demo:** _(https://tone.anthonyta.dev)_
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
@@ -52,6 +52,60 @@ Japanese politeness isn't a single setting — the same sentence can be casual b
 - **Schema-enforced LLM output.** The translation endpoint uses Claude's structured outputs (a JSON schema passed via `output_config.format`), so every response is guaranteed valid and parseable — no brittle markdown-stripping or fragile parsing. It generates only the register the user selected, keeping latency and token cost down.
 - **Optimistic UI.** Your message appears instantly and is reconciled with the persisted record once the API responds, so the conversation feels real-time.
 - **Next.js 16 Proxy.** Clerk's middleware runs in `proxy.ts` (Next 16's renamed middleware), protecting routes before requests reach the app.
+
+## Running Locally
+
+**Prerequisites:** Node.js 20+, plus free accounts on [Anthropic](https://console.anthropic.com), [Clerk](https://clerk.com), and [Supabase](https://supabase.com).
+
+```bash
+git clone https://github.com/anthonylhta/tone-translator.git
+cd tone-translator
+npm install
+```
+
+Create a `.env.local` in the project root:
+
+```bash
+# Anthropic (Claude API)
+CLAUDE_API_KEY=sk-ant-...
+
+# Clerk (authentication)
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+CLERK_SECRET_KEY=sk_test_...
+
+# Supabase (database)
+NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=...
+SUPABASE_SERVICE_ROLE_KEY=...   # server-only; Supabase -> Settings -> API
+```
+
+Create the `translations` table in the Supabase SQL editor:
+
+```sql
+create table if not exists translations (
+  id uuid primary key default gen_random_uuid(),
+  user_id text not null,
+  user_text text not null,
+  assistant_text text not null,
+  tone text,
+  explanation text,
+  created_at timestamptz not null default now()
+);
+create index if not exists translations_user_id_created_at_idx
+  on translations (user_id, created_at);
+
+-- Lock the table down: the public anon key gets no direct access; the server
+-- uses the service_role key, which bypasses RLS.
+alter table translations enable row level security;
+```
+
+Start the dev server:
+
+```bash
+npm run dev
+```
+
+Open [http://localhost:3000](http://localhost:3000) — translate as a guest right away, or sign in to save your history.
 
 ---
 
