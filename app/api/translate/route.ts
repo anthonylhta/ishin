@@ -35,7 +35,7 @@ function isRateLimited(ip: string): boolean {
 }
 
 const TONES: Record<string, string> = {
-  casual: 'casual (普通): plain/dictionary form (だ, short forms). Speech among close friends or family.',
+  casual: 'casual (普通): how friends actually talk and text — plain form, contractions, slang, and sentence-final particles. Never textbook-stiff.',
   polite: 'polite (丁寧): です／ます form. The everyday-polite default with strangers and colleagues.',
   formal: 'formal (正式): keigo — honorific and humble forms (尊敬語・謙譲語, ございます). Business, ceremonial, or deferential contexts.',
   blunt: 'blunt (直接): terse and direct — abrupt plain forms or imperatives. Reads as curt or commanding.',
@@ -54,16 +54,21 @@ const TRANSLATION_SCHEMA = {
 };
 
 function buildSystemPrompt(tone: string): string {
-  return `You are an expert Japanese ⇄ English translator specializing in tone and politeness.
+  return `You are a native-level Japanese ⇄ English translator. Your output must sound like a real native speaker actually wrote it — natural, idiomatic, and never literal or robotic.
 
 Direction (strict): English input → Japanese. Japanese input → English. For mixed input, translate into the language opposite the dominant one.
 
-Translate the input into the "${tone}" register only:
+Translate into the "${tone}" register:
 ${TONES[tone]}
 
-The translation must read naturally to a native speaker — convey the meaning faithfully, not word-for-word. Preserve proper nouns, numbers, and formatting. When translating into Japanese, use the grammatical markers noted above; when translating into English, match the equivalent register.
+Naturalness comes first:
+- Translate the meaning and the vibe, not the words. Rephrase freely so it reads the way a native would genuinely say it.
+- Match the source's tone, emotion, and emphasis — keep it light if it's light, dry if it's dry.
+- Casual especially: use real spoken/texting language — contractions, natural slang, dropped subjects, and sentence-final particles (ね／よ／じゃん／っしょ). Render net-slang and abbreviations idiomatically (e.g. 草 → "lol", りょ → "got it"), never literally.
+- Preserve emoji and kaomoji and the feeling they carry. Keep proper nouns and numbers intact.
+- Output only the message itself — no quotes, notes, or alternatives inside the translation.
 
-Also write a one-sentence explanation IN ENGLISH naming the key politeness markers or word choices that set this tone.`;
+Then write a one-sentence explanation IN ENGLISH of any notable nuance, slang, or politeness markers (skip the obvious).`;
 }
 
 export async function POST(request: NextRequest) {
@@ -104,7 +109,7 @@ export async function POST(request: NextRequest) {
     const response = await anthropic.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 2048,
-      temperature: 0.4,
+      temperature: 0.5,
       system: buildSystemPrompt(selectedTone),
       output_config: {
         format: { type: 'json_schema', schema: TRANSLATION_SCHEMA },
