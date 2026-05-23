@@ -129,7 +129,23 @@ export function useCloudStorage() {
   }, []);
 
   const addAssistantMessage = useCallback(async (text: string, tone: string, explanation: string, userText: string) => {
-    if (!isSignedIn) return;
+    // Guest (not signed in): keep the exchange in memory only, persist nothing.
+    if (!isSignedIn) {
+      setMessages(prev => {
+        const assistantMessage: ChatMessage = {
+          id: `guest_${Date.now()}_assistant`,
+          role: 'assistant',
+          text,
+          tone,
+          explanation,
+          timestamp: Date.now() + 1,
+        };
+        const updated = [...prev, assistantMessage];
+        setGroupedMessages(groupMessagesByDate(updated));
+        return updated;
+      });
+      return;
+    }
     
     const response = await fetch('/api/translations', {
       method: 'POST',
@@ -177,7 +193,11 @@ export function useCloudStorage() {
   }, [isSignedIn]);
 
   const clearHistory = useCallback(async () => {
-    if (!isSignedIn) return;
+    if (!isSignedIn) {
+      setMessages([]);
+      setGroupedMessages([]);
+      return;
+    }
     
     const response = await fetch('/api/translations', { method: 'DELETE' });
     const result = await response.json();
@@ -189,6 +209,16 @@ export function useCloudStorage() {
   }, [isSignedIn]);
 
   const deleteMessage = useCallback(async (id: string) => {
+    // Guest: just drop it from in-memory state.
+    if (!isSignedIn) {
+      setMessages(prev => {
+        const updated = prev.filter(m => m.id !== id);
+        setGroupedMessages(groupMessagesByDate(updated));
+        return updated;
+      });
+      return;
+    }
+
     const dbId = id.split('_')[0];
     
     const response = await fetch(`/api/translations?id=${dbId}`, { method: 'DELETE' });
@@ -201,7 +231,7 @@ export function useCloudStorage() {
         return updated;
       });
     }
-  }, []);
+  }, [isSignedIn]);
 
   const toggleGroup = useCallback((groupTitle: string) => {
     const collapsedStates = JSON.parse(localStorage.getItem('collapsed_groups') || '{}');

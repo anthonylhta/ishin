@@ -21,9 +21,10 @@ export default function Home() {
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('polite');
   const [isLoading, setIsLoading] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
-  
+
+  // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
   const { groupedMessages, addUserMessage, addAssistantMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -38,16 +39,16 @@ export default function Home() {
   };
 
   const handleTranslate = async () => {
-    if (!inputText.trim() || isLoading || !isSignedIn) return;
+    if (!inputText.trim() || isLoading) return;
 
     const userText = inputText;
     const tone = selectedTone;
-    
+
     setIsLoading(true);
-    
+
     addUserMessage(userText, tone);
     setInputText('');
-    
+
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
@@ -56,24 +57,21 @@ export default function Home() {
       const response = await fetch('/api/translate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text: userText, 
-          sourceLang: 'auto',
-          selectedTone: tone 
-        }),
+        body: JSON.stringify({ text: userText, selectedTone: tone }),
       });
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error);
+      if (!response.ok) throw new Error(data.error || 'Translation failed');
 
-      const variant = data.variants.find((v: any) => v.tone === tone);
-      
+      const variant = data.variants.find((v: { tone: string }) => v.tone === tone);
+
       if (variant) {
         await addAssistantMessage(variant.translation, tone, variant.explanation, userText);
       }
     } catch (err) {
       console.error(err);
+      setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
@@ -102,41 +100,8 @@ export default function Home() {
     );
   }
 
-  if (!isSignedIn) {
-    return (
-      <div style={{
-        height: '100vh',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--background)',
-        color: 'var(--text-primary)',
-        gap: '20px',
-      }}>
-        <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
-        <h1 style={{ fontFamily: 'var(--font-serif)', fontSize: '2rem' }}>TONE TRANSLATOR</h1>
-        <p style={{ color: 'var(--text-secondary)' }}>Sign in to save your translations</p>
-        <SignInButton mode="modal">
-          <button style={{
-            background: 'var(--accent-red)',
-            border: 'none',
-            borderRadius: '100px',
-            padding: '12px 32px',
-            color: 'white',
-            fontSize: '1rem',
-            fontWeight: 600,
-            cursor: 'pointer',
-          }}>
-            Sign In with Google
-          </button>
-        </SignInButton>
-      </div>
-    );
-  }
-
   return (
-    <div style={{ 
+    <div style={{
       position: 'fixed',
       top: 0,
       left: 0,
@@ -159,8 +124,8 @@ export default function Home() {
           </div>
           <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
             {groupedMessages.length > 0 && (
-              <button 
-                onClick={() => setShowClearModal(true)} 
+              <button
+                onClick={() => setShowClearModal(true)}
                 style={{
                   background: 'none',
                   border: '1px solid var(--border)',
@@ -174,10 +139,55 @@ export default function Home() {
                 Clear
               </button>
             )}
-            <UserButton />
+            {isSignedIn ? (
+              <UserButton />
+            ) : (
+              <SignInButton mode="modal">
+                <button style={{
+                  background: 'var(--accent-red)',
+                  border: 'none',
+                  borderRadius: '100px',
+                  padding: '6px 16px',
+                  color: 'white',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}>
+                  Sign In
+                </button>
+              </SignInButton>
+            )}
           </div>
         </div>
       </div>
+
+      {!isSignedIn && (
+        <div style={{
+          flexShrink: 0,
+          padding: '8px 16px',
+          background: 'rgba(201, 168, 76, 0.08)',
+          borderBottom: '1px solid var(--border)',
+          fontSize: '0.75rem',
+          color: 'var(--text-secondary)',
+          textAlign: 'center',
+        }}>
+          Guest mode — translations aren&apos;t saved.{' '}
+          <SignInButton mode="modal">
+            <button style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--accent-gold)',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              fontSize: '0.75rem',
+              padding: 0,
+              fontFamily: 'inherit',
+            }}>
+              Sign in to save your history
+            </button>
+          </SignInButton>
+        </div>
+      )}
 
       <div style={{
         flex: 1,
@@ -258,7 +268,7 @@ export default function Home() {
               {isLoading ? '⋯' : '→'}
             </button>
           </div>
-          
+
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {TONES.map((tone) => (
               <button
@@ -283,8 +293,13 @@ export default function Home() {
         </div>
       </div>
 
-      <Toast message="Copied!" isVisible={showToast} onHide={() => setShowToast(false)} />
-      
+      <Toast
+        message={toastMessage ?? ''}
+        isVisible={toastMessage !== null}
+        onHide={() => setToastMessage(null)}
+        icon="⚠️"
+      />
+
       <ConfirmModal
         isOpen={showClearModal}
         title="Clear All History"

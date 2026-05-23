@@ -6,9 +6,10 @@ interface ToastProps {
   message: string;
   isVisible: boolean;
   onHide: () => void;
+  icon?: string;
 }
 
-export default function Toast({ message, isVisible, onHide }: ToastProps) {
+export default function Toast({ message, isVisible, onHide, icon = '✓' }: ToastProps) {
   useEffect(() => {
     if (isVisible) {
       const timer = setTimeout(() => {
@@ -44,7 +45,7 @@ export default function Toast({ message, isVisible, onHide }: ToastProps) {
       gap: '8px',
       boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
     }}>
-        <span>✓</span>
+        <span>{icon}</span>
         {message}
       </div>
       <style jsx>{`
