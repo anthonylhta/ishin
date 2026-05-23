@@ -1,6 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
 
+const MAX_INPUT_CHARS = 2000;
+
+// Simple in-memory fixed-window rate limit. Anonymous /api/translate is open to
+// guests, so this caps how fast a single IP can spend tokens. Note: per warm
+// serverless instance — it resets on cold start and isn't shared across
+// instances. For stronger guarantees, back it with Upstash Redis / a DB.
+const RATE_LIMIT = 15; // requests
+const RATE_WINDOW_MS = 60_000; // per minute
+const hits = new Map<string, { count: number; resetAt: number }>();
+
+function getClientIp(request: NextRequest): string {
+  const xff = request.headers.get('x-forwarded-for');
+  if (xff) return xff.split(',')[0].trim();
+  return request.headers.get('x-real-ip') ?? 'unknown';
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  if (hits.size > 5000) {
+    for (const [key, value] of hits) {
+      if (now > value.resetAt) hits.delete(key);
+    }
+  }
+  const entry = hits.get(ip);
+  if (!entry || now > entry.resetAt) {
+    hits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+    return false;
+  }
+  if (entry.count >= RATE_LIMIT) return true;
+  entry.count += 1;
+  return false;
+}
+
 const TONES: Record<string, string> = {
   casual: 'casual (普通): plain/dictionary form (だ, short forms). Speech among close friends or family.',
   polite: 'polite (丁寧): です／ます form. The everyday-polite default with strangers and colleagues.',
@@ -44,10 +77,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    if (isRateLimited(getClientIp(request))) {
+      return NextResponse.json(
+        { error: 'Too many requests — please wait a moment and try again.' },
+        { status: 429 }
+      );
+    }
+
     const { text, selectedTone } = await request.json();
 
     if (!text || text.trim().length === 0) {
       return NextResponse.json({ error: 'Text is required' }, { status: 400 });
+    }
+    if (text.length > MAX_INPUT_CHARS) {
+      return NextResponse.json(
+        { error: `Text too long (max ${MAX_INPUT_CHARS} characters)` },
+        { status: 400 }
+      );
     }
     if (!selectedTone || !(selectedTone in TONES)) {
       return NextResponse.json({ error: 'Invalid tone' }, { status: 400 });
