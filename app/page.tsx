@@ -90,10 +90,20 @@ export default function Home() {
         const displayText = markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText;
         updateStreamingMessage(streamingId, displayText.trimEnd());
       }
+      // Flush any buffered multi-byte UTF-8 sequences from the decoder
+      fullText += decoder.decode();
+
+      if (fullText.includes('[[MAX_TOKENS]]')) {
+        throw new Error('Response was cut short — try a shorter input');
+      }
 
       const markerIdx = fullText.indexOf(EXPLANATION_MARKER);
       const translation = (markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText).trim();
       const explanation = (markerIdx >= 0 ? fullText.slice(markerIdx + EXPLANATION_MARKER.length) : '').trim();
+
+      if (!translation) {
+        throw new Error('Translation failed — empty response');
+      }
 
       await finalizeStreamingMessage(streamingId, translation, tone, explanation, userText);
     } catch (err) {

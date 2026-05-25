@@ -124,6 +124,10 @@ export async function POST(request: NextRequest) {
               controller.enqueue(encoder.encode(chunk.delta.text));
             }
           }
+          const finalMsg = await stream.finalMessage();
+          if (finalMsg.stop_reason === 'max_tokens') {
+            controller.enqueue(encoder.encode('\n[[MAX_TOKENS]]'));
+          }
         } catch (err) {
           controller.error(err);
           return;
