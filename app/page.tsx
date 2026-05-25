@@ -47,9 +47,21 @@ export default function Home() {
     localStorage.setItem('selectedTone', id);
   };
 
-  const handleClearHistory = () => {
+  const handleClearHistory = async () => {
     setShowClearModal(false);
-    clearHistory();
+    try {
+      await clearHistory();
+    } catch {
+      setToastMessage('Failed to clear history — please try again');
+    }
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      await deleteMessage(id);
+    } catch {
+      setToastMessage('Failed to delete translation — please try again');
+    }
   };
 
   const EXPLANATION_MARKER = '[[EXPLANATION]]';
@@ -256,7 +268,7 @@ export default function Home() {
                 messages={group.messages}
                 collapsed={group.collapsed}
                 onToggle={() => toggleGroup(group.title)}
-                onDeleteMessage={deleteMessage}
+                onDeleteMessage={handleDeleteMessage}
               />
             ))
           )}

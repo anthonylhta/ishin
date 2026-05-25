@@ -250,9 +250,8 @@ export function useCloudStorage() {
     }
     const response = await fetch('/api/translations', { method: 'DELETE' });
     const result = await response.json();
-    if (result.success) {
-      setMessages([]);
-    }
+    if (!result.success) throw new Error(result.error || 'Failed to clear history');
+    setMessages([]);
   }, [isSignedIn]);
 
   const deleteMessage = useCallback(async (id: string) => {
@@ -263,9 +262,8 @@ export function useCloudStorage() {
     const dbId = id.split('_')[0];
     const response = await fetch(`/api/translations?id=${dbId}`, { method: 'DELETE' });
     const result = await response.json();
-    if (result.success) {
-      setMessages(prev => prev.filter(m => !m.id.startsWith(dbId)));
-    }
+    if (!result.success) throw new Error(result.error || 'Failed to delete translation');
+    setMessages(prev => prev.filter(m => !m.id.startsWith(dbId)));
   }, [isSignedIn]);
 
   return {
