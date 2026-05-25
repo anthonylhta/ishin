@@ -364,10 +364,37 @@ export default function Home() {
               Loading your history...
             </div>
           ) : groupedMessages.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
+            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-tertiary)' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
-              <div>Your translations will appear here</div>
-              <div style={{ fontSize: '12px', marginTop: '8px' }}>Type below — use the TRANSLATE / CHECK toggle to switch modes</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+                Translate between Japanese and English
+              </div>
+              <div style={{ fontSize: '12px', marginBottom: '28px' }}>
+                or check whether your Japanese sounds natural
+              </div>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+                <button
+                  onClick={() => { setCheckMode(false); selectTone('casual'); setInputText('Are you free tonight?'); inputRef.current?.focus(); }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-red)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', width: '180px', transition: 'all 0.15s' }}
+                >
+                  <div style={{ fontSize: '10px', color: 'var(--accent-red)', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.5px' }}>→ TRANSLATE</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px' }}>&ldquo;Are you free tonight?&rdquo;</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>普通 CASUAL</div>
+                </button>
+                <button
+                  onClick={() => { setCheckMode(true); selectTone('casual'); setInputText('会議ずらせる？'); inputRef.current?.focus(); }}
+                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-gold)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', width: '180px', transition: 'all 0.15s' }}
+                >
+                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.5px', fontFamily: 'var(--font-serif)' }}>確 CHECK</div>
+                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'var(--font-serif)' }}>会議ずらせる？</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>普通 CASUAL</div>
+                </button>
+              </div>
+              <div style={{ fontSize: '11px' }}>Click an example to try it</div>
             </div>
           ) : (
             groupedMessages.map((group, idx) => (
