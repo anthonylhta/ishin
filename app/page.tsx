@@ -21,6 +21,7 @@ export default function Home() {
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('casual');
   const [isLoading, setIsLoading] = useState(false);
+  const [loadingAction, setLoadingAction] = useState<'translate' | 'check' | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
 
@@ -73,6 +74,7 @@ export default function Home() {
     const tone = selectedTone;
 
     setIsLoading(true);
+    setLoadingAction('translate');
     addUserMessage(userText, tone);
     setInputText('');
 
@@ -129,6 +131,69 @@ export default function Home() {
       setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
+      setLoadingAction(null);
+      inputRef.current?.focus();
+    }
+  };
+
+  const handleCheck = async () => {
+    if (!inputText.trim() || isLoading) return;
+
+    const userText = inputText;
+    const tone = selectedTone;
+
+    setIsLoading(true);
+    setLoadingAction('check');
+    addUserMessage(userText, tone, 'check');
+    setInputText('');
+
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
+
+    const streamingId = addStreamingMessage(tone, 'check');
+
+    try {
+      const response = await fetch('/api/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: userText, selectedTone: tone }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Check failed');
+      }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        updateStreamingMessage(streamingId, fullText);
+      }
+      fullText += decoder.decode();
+
+      if (fullText.includes('[[MAX_TOKENS]]')) {
+        throw new Error('Response was cut short — try a shorter input');
+      }
+
+      const result = fullText.trim();
+      if (!result) {
+        throw new Error('Check failed — empty response');
+      }
+
+      await finalizeStreamingMessage(streamingId, result, tone, '', userText, 'check');
+    } catch (err) {
+      console.error(err);
+      removeStreamingMessage(streamingId);
+      setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+      setLoadingAction(null);
       inputRef.current?.focus();
     }
   };
@@ -305,7 +370,7 @@ export default function Home() {
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
               <div>Your translations will appear here</div>
-              <div style={{ fontSize: '12px', marginTop: '8px' }}>Type something below and press Enter</div>
+              <div style={{ fontSize: '12px', marginTop: '8px' }}>Translate with → or check naturalness with 確</div>
             </div>
           ) : (
             groupedMessages.map((group, idx) => (
@@ -354,6 +419,26 @@ export default function Home() {
               }}
             />
             <button
+              onClick={handleCheck}
+              disabled={isLoading || !inputText.trim()}
+              title="Check naturalness"
+              style={{
+                background: 'var(--surface-elevated)',
+                border: '1px solid var(--border)',
+                borderRadius: '24px',
+                padding: '0 18px',
+                color: 'var(--text-secondary)',
+                fontSize: '16px',
+                fontFamily: 'var(--font-serif)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                opacity: isLoading || !inputText.trim() ? 0.5 : 1,
+                flexShrink: 0,
+              }}
+            >
+              {loadingAction === 'check' ? '⋯' : '確'}
+            </button>
+            <button
               onClick={handleTranslate}
               disabled={isLoading || !inputText.trim()}
               style={{
@@ -366,9 +451,10 @@ export default function Home() {
                 fontWeight: 600,
                 cursor: 'pointer',
                 opacity: isLoading || !inputText.trim() ? 0.5 : 1,
+                flexShrink: 0,
               }}
             >
-              {isLoading ? '⋯' : '→'}
+              {loadingAction === 'translate' ? '⋯' : '→'}
             </button>
           </div>
 

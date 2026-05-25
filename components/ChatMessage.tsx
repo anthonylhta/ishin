@@ -11,10 +11,25 @@ interface Props {
 export default function ChatMessage({ message, onDelete }: Props) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
+  const isCheck = message.kind === 'check';
   const timestamp = new Date(message.timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // For finalized check results, split the verdict line from the explanation body
+  let verdictLine = '';
+  let checkBody = '';
+  if (isCheck && !isUser && !message.isStreaming) {
+    const nlIdx = message.text.indexOf('\n');
+    if (nlIdx > 0) {
+      verdictLine = message.text.slice(0, nlIdx).trim();
+      checkBody = message.text.slice(nlIdx + 1).trim();
+    } else {
+      verdictLine = message.text.trim();
+    }
+  }
+  const isNatural = verdictLine.startsWith('✓');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(message.text);
@@ -40,7 +55,7 @@ export default function ChatMessage({ message, onDelete }: Props) {
           padding: '12px 16px',
         }}
       >
-        {/* Header with tone and time */}
+        {/* Header with tone/kind and time */}
         <div
           style={{
             display: 'flex',
@@ -54,27 +69,55 @@ export default function ChatMessage({ message, onDelete }: Props) {
         >
           {message.tone && (
             <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>
-              {message.tone}
+              {isCheck ? `確 ${message.tone}` : message.tone}
             </span>
           )}
           <span>{timestamp}</span>
         </div>
 
         {/* Message text */}
-        <div
-          style={{
-            fontSize: isUser ? '14px' : '18px',
-            fontFamily: isUser ? 'var(--font-sans)' : 'var(--font-serif)',
-            lineHeight: 1.5,
-            color: 'var(--text-primary)',
-            wordBreak: 'break-word',
-          }}
-        >
-          {message.text}
-          {message.isStreaming && (
-            <span className="streaming-cursor" />
-          )}
-        </div>
+        {isCheck && !isUser ? (
+          message.isStreaming ? (
+            <div style={{ fontSize: '14px', fontFamily: 'var(--font-sans)', lineHeight: 1.5, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
+              {message.text}
+              <span className="streaming-cursor" />
+            </div>
+          ) : (
+            <>
+              {verdictLine && (
+                <div style={{
+                  fontSize: '15px',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-sans)',
+                  color: isNatural ? 'var(--accent-gold)' : 'var(--text-primary)',
+                  marginBottom: checkBody ? '8px' : 0,
+                }}>
+                  {verdictLine}
+                </div>
+              )}
+              {checkBody && (
+                <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+                  {checkBody}
+                </div>
+              )}
+            </>
+          )
+        ) : (
+          <div
+            style={{
+              fontSize: isUser ? '14px' : '18px',
+              fontFamily: isUser ? 'var(--font-sans)' : 'var(--font-serif)',
+              lineHeight: 1.5,
+              color: 'var(--text-primary)',
+              wordBreak: 'break-word',
+            }}
+          >
+            {message.text}
+            {message.isStreaming && (
+              <span className="streaming-cursor" />
+            )}
+          </div>
+        )}
 
         {/* Explanation for assistant */}
         {!isUser && message.explanation && (

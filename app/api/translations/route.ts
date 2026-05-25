@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { userText, assistantText, tone, explanation } = await request.json();
+    const { userText, assistantText, tone, explanation, message_type } = await request.json();
 
     if (!userText || typeof userText !== 'string' || userText.length > MAX_USER_TEXT) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
@@ -59,6 +59,7 @@ export async function POST(request: NextRequest) {
     if (explanation != null && (typeof explanation !== 'string' || explanation.length > MAX_EXPLANATION)) {
       return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
     }
+    const validMessageType = message_type === 'check' ? 'check' : 'translation';
 
     // Ensure the user row exists before inserting (satisfies FK constraint).
     // /api/user/sync handles this on sign-in, but this guards against races.
@@ -74,6 +75,7 @@ export async function POST(request: NextRequest) {
         assistant_text: assistantText,
         tone,
         explanation,
+        message_type: validMessageType,
       })
       .select()
       .single();
