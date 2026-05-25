@@ -42,6 +42,12 @@ export async function POST(request: NextRequest) {
 
     const { userText, assistantText, tone, explanation } = await request.json();
 
+    // Ensure the user row exists before inserting (satisfies FK constraint).
+    // /api/user/sync handles this on sign-in, but this guards against races.
+    await supabase
+      .from('users')
+      .upsert({ id: userId }, { onConflict: 'id', ignoreDuplicates: true });
+
     const { data, error } = await supabase
       .from('translations')
       .insert({

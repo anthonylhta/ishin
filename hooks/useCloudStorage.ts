@@ -100,9 +100,10 @@ export function useCloudStorage() {
     setIsLoading(false);
   }, [isSignedIn]);
 
-  // Auto-load when user signs in
+  // Auto-load when user signs in; sync user row in parallel
   useEffect(() => {
     if (isSignedIn) {
+      fetch('/api/user/sync', { method: 'POST' }).catch(console.error);
       loadMessages();
     } else {
       setMessages([]);
