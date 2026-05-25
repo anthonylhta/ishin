@@ -21,6 +21,7 @@ export default function Home() {
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('casual');
   const [isLoading, setIsLoading] = useState(false);
+  const [checkMode, setCheckMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
 
@@ -133,6 +134,66 @@ export default function Home() {
     }
   };
 
+  const handleCheck = async () => {
+    if (!inputText.trim() || isLoading) return;
+
+    const userText = inputText;
+    const tone = selectedTone;
+
+    setIsLoading(true);
+    addUserMessage(userText, tone, 'check');
+    setInputText('');
+
+    if (inputRef.current) {
+      inputRef.current.style.height = 'auto';
+    }
+
+    const streamingId = addStreamingMessage(tone, 'check');
+
+    try {
+      const response = await fetch('/api/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: userText, selectedTone: tone }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Check failed');
+      }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+        updateStreamingMessage(streamingId, fullText);
+      }
+      fullText += decoder.decode();
+
+      if (fullText.includes('[[MAX_TOKENS]]')) {
+        throw new Error('Response was cut short — try a shorter input');
+      }
+
+      const result = fullText.trim();
+      if (!result) {
+        throw new Error('Check failed — empty response');
+      }
+
+      await finalizeStreamingMessage(streamingId, result, tone, '', userText, 'check');
+    } catch (err) {
+      console.error(err);
+      removeStreamingMessage(streamingId);
+      setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
+    } finally {
+      setIsLoading(false);
+      inputRef.current?.focus();
+    }
+  };
+
   const scrollToGroup = (title: string) => {
     document
       .getElementById(`group-${title.toLowerCase().replace(/\s+/g, '-')}`)
@@ -142,7 +203,8 @@ export default function Home() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleTranslate();
+      if (checkMode) handleCheck();
+      else handleTranslate();
     }
   };
 
@@ -305,7 +367,7 @@ export default function Home() {
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
               <div>Your translations will appear here</div>
-              <div style={{ fontSize: '12px', marginTop: '8px' }}>Type something below and press Enter</div>
+              <div style={{ fontSize: '12px', marginTop: '8px' }}>Type below — use the TRANSLATE / CHECK toggle to switch modes</div>
             </div>
           ) : (
             groupedMessages.map((group, idx) => (
@@ -337,7 +399,7 @@ export default function Home() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter text... (Enter to send)"
+              placeholder={checkMode ? 'Enter text to check... (Enter to send)' : 'Enter text... (Enter to send)'}
               disabled={isLoading}
               rows={1}
               style={{
@@ -354,7 +416,7 @@ export default function Home() {
               }}
             />
             <button
-              onClick={handleTranslate}
+              onClick={checkMode ? handleCheck : handleTranslate}
               disabled={isLoading || !inputText.trim()}
               style={{
                 background: 'var(--accent-red)',
@@ -366,32 +428,76 @@ export default function Home() {
                 fontWeight: 600,
                 cursor: 'pointer',
                 opacity: isLoading || !inputText.trim() ? 0.5 : 1,
+                flexShrink: 0,
               }}
             >
               {isLoading ? '⋯' : '→'}
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {TONES.map((tone) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
+              {TONES.map((tone) => (
+                <button
+                  key={tone.id}
+                  onClick={() => selectTone(tone.id)}
+                  style={{
+                    background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '100px',
+                    padding: '6px 16px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {tone.kanji} {tone.label}
+                </button>
+              ))}
+            </div>
+            <div style={{
+              display: 'flex',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '100px',
+              padding: '2px',
+              flexShrink: 0,
+            }}>
               <button
-                key={tone.id}
-                onClick={() => selectTone(tone.id)}
+                onClick={() => setCheckMode(false)}
                 style={{
-                  background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface)',
-                  border: '1px solid var(--border)',
+                  background: !checkMode ? 'var(--surface-elevated)' : 'transparent',
+                  border: 'none',
                   borderRadius: '100px',
-                  padding: '6px 16px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: !checkMode ? 600 : 400,
+                  color: !checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
                   cursor: 'pointer',
                   letterSpacing: '0.5px',
                 }}
               >
-                {tone.kanji} {tone.label}
+                TRANSLATE
               </button>
-            ))}
+              <button
+                onClick={() => setCheckMode(true)}
+                style={{
+                  background: checkMode ? 'var(--surface-elevated)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '100px',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: checkMode ? 600 : 400,
+                  color: checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                CHECK
+              </button>
+            </div>
           </div>
         </div>
       </div>

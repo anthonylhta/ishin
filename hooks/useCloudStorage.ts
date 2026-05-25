@@ -9,6 +9,7 @@ export interface ChatMessage {
   text: string;
   tone?: string;
   explanation?: string;
+  kind?: 'translation' | 'check';
   timestamp: number;
   isStreaming?: boolean;
 }
@@ -87,12 +88,14 @@ export function useCloudStorage() {
       const result = await response.json();
       if (result.success && result.data) {
         const loadedMessages: ChatMessage[] = [];
-        result.data.forEach((record: { id: string; user_text: string; assistant_text: string; tone: string; explanation: string; created_at: string }) => {
+        result.data.forEach((record: { id: string; user_text: string; assistant_text: string; tone: string; explanation: string; created_at: string; message_type?: string }) => {
+          const kind: 'translation' | 'check' = record.message_type === 'check' ? 'check' : 'translation';
           loadedMessages.push({
             id: `${record.id}_user`,
             role: 'user',
             text: record.user_text,
             tone: record.tone,
+            kind,
             timestamp: new Date(record.created_at).getTime(),
           });
           loadedMessages.push({
@@ -101,6 +104,7 @@ export function useCloudStorage() {
             text: record.assistant_text,
             tone: record.tone,
             explanation: record.explanation,
+            kind,
             timestamp: new Date(record.created_at).getTime() + 1,
           });
         });
@@ -125,12 +129,13 @@ export function useCloudStorage() {
     }
   }, [isSignedIn, loadMessages]);
 
-  const addUserMessage = useCallback((text: string, tone: string) => {
+  const addUserMessage = useCallback((text: string, tone: string, kind: 'translation' | 'check' = 'translation') => {
     const newMessage: ChatMessage = {
       id: `temp_${Date.now()}`,
       role: 'user',
       text,
       tone,
+      kind,
       timestamp: Date.now(),
     };
     setMessages(prev => [...prev, newMessage]);
@@ -176,10 +181,11 @@ export function useCloudStorage() {
     tone: string,
     explanation: string,
     userText: string,
+    kind: 'translation' | 'check' = 'translation',
   ) => {
     // Update the streaming message in-place — no remove+re-add flash
     setMessages(prev => prev.map(m =>
-      m.id === streamingId ? { ...m, text, explanation, isStreaming: false } : m
+      m.id === streamingId ? { ...m, text, explanation, kind, isStreaming: false } : m
     ));
 
     if (!isSignedIn) return;
@@ -188,7 +194,7 @@ export function useCloudStorage() {
       const response = await fetch('/api/translations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userText, assistantText: text, tone, explanation }),
+        body: JSON.stringify({ userText, assistantText: text, tone, explanation, message_type: kind }),
       });
       const result = await response.json();
       if (result.success) {
@@ -215,13 +221,14 @@ export function useCloudStorage() {
     }
   }, [isSignedIn]);
 
-  const addStreamingMessage = useCallback((tone: string): string => {
+  const addStreamingMessage = useCallback((tone: string, kind: 'translation' | 'check' = 'translation'): string => {
     const id = `streaming_${Date.now()}`;
     setMessages(prev => [...prev, {
       id,
       role: 'assistant',
       text: '',
       tone,
+      kind,
       timestamp: Date.now() + 1,
       isStreaming: true,
     }]);
