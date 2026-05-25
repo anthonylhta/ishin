@@ -25,7 +25,7 @@ export default function Home() {
   const [showClearModal, setShowClearModal] = useState(false);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
-  const { groupedMessages, addUserMessage, addAssistantMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
+  const { groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -99,8 +99,7 @@ export default function Home() {
       const translation = (markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText).trim();
       const explanation = (markerIdx >= 0 ? fullText.slice(markerIdx + EXPLANATION_MARKER.length) : '').trim();
 
-      removeStreamingMessage(streamingId);
-      await addAssistantMessage(translation, tone, explanation, userText);
+      await finalizeStreamingMessage(streamingId, translation, tone, explanation, userText);
     } catch (err) {
       console.error(err);
       removeStreamingMessage(streamingId);

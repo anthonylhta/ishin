@@ -235,6 +235,58 @@ export function useCloudStorage() {
     }
   }, [isSignedIn]);
 
+  const finalizeStreamingMessage = useCallback(async (
+    streamingId: string,
+    text: string,
+    tone: string,
+    explanation: string,
+    userText: string,
+  ) => {
+    // Update the streaming message in-place — no remove+re-add flash
+    setMessages(prev => {
+      const updated = prev.map(m =>
+        m.id === streamingId ? { ...m, text, explanation, isStreaming: false } : m
+      );
+      setGroupedMessages(groupMessagesByDate(updated));
+      return updated;
+    });
+
+    if (!isSignedIn) return;
+
+    try {
+      const response = await fetch('/api/translations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userText, assistantText: text, tone, explanation }),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setMessages(prev => {
+          const tempUser = prev.find(
+            m => m.role === 'user' && m.text === userText && m.tone === tone && m.id.startsWith('temp_')
+          );
+          const userTimestamp = tempUser?.timestamp ?? Date.now();
+          const withoutTempUser = prev.filter(m => m !== tempUser);
+          const withRealAssistantId = withoutTempUser.map(m =>
+            m.id === streamingId ? { ...m, id: `${result.data.id}_assistant` } : m
+          );
+          const realUserMessage: ChatMessage = {
+            id: `${result.data.id}_user`,
+            role: 'user',
+            text: userText,
+            tone,
+            timestamp: userTimestamp,
+          };
+          const updated = [...withRealAssistantId, realUserMessage];
+          setGroupedMessages(groupMessagesByDate(updated));
+          return updated;
+        });
+      }
+    } catch (err) {
+      console.error('Failed to save translation:', err);
+    }
+  }, [isSignedIn]);
+
   const addStreamingMessage = useCallback((tone: string): string => {
     const id = `streaming_${Date.now()}`;
     const msg: ChatMessage = {
@@ -291,6 +343,7 @@ export function useCloudStorage() {
     addStreamingMessage,
     updateStreamingMessage,
     removeStreamingMessage,
+    finalizeStreamingMessage,
     clearHistory,
     deleteMessage,
     toggleGroup,
