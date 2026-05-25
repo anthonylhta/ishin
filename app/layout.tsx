@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { DM_Sans } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import './globals.css';
+import { Analytics } from "@vercel/analytics/next"
 
 const dmSans = DM_Sans({ 
   subsets: ['latin'],
@@ -29,7 +30,9 @@ export default function RootLayout({
           />
         </head>
         <body className={`${dmSans.variable} font-sans antialiased`}>
-          {children}
+            {children}
+          {/* Vercel Monitoring */}
+          <Analytics />
         </body>
       </html>
     </ClerkProvider>
