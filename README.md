@@ -49,9 +49,22 @@ Japanese politeness isn't a single setting — the same sentence can be casual b
 ## Architecture Highlights
 
 - **Per-user data isolation.** Clerk owns authentication; every translation row is stamped with the Clerk `userId`, and the API scopes all reads, writes, and deletes to the signed-in user. The server talks to the database with Supabase's service-role key while **Row-Level Security** locks the public key out of the table — the API is the only door in.
-- **Schema-enforced LLM output.** The translation endpoint uses Claude's structured outputs (a JSON schema passed via `output_config.format`), so every response is guaranteed valid and parseable — no brittle markdown-stripping or fragile parsing. It generates only the register the user selected, keeping latency and token cost down.
-- **Optimistic UI.** Your message appears instantly and is reconciled with the persisted record once the API responds, so the conversation feels real-time.
+- **Streaming output.** The translation API streams plain text chunks from Claude directly to the client. The client accumulates them, splitting on a `[[EXPLANATION]]` sentinel to separate the translation from the nuance note. The message is finalized in-place once streaming completes — no flash or re-render.
+- **Optimistic UI.** Your message appears instantly; the streaming assistant message fills in live. The record is persisted to Supabase after streaming completes and the temp ID is swapped for the real DB ID without any visible change.
+- **IP rate limiting.** The translate endpoint enforces 15 requests/minute per IP using an in-memory fixed-window counter. Vercel's `x-vercel-forwarded-for` header is used instead of `x-forwarded-for` to prevent client-side spoofing.
 - **Next.js 16 Proxy.** Clerk's middleware runs in `proxy.ts` (Next 16's renamed middleware), protecting routes before requests reach the app.
+
+## CI / Quality
+
+Every push and pull request runs a GitHub Actions pipeline:
+
+1. `npm audit --audit-level=high` — blocks on high/critical dependency vulnerabilities
+2. `npx tsc --noEmit` — TypeScript type check
+3. `npm run lint` — ESLint
+4. `npm test` — Vitest unit tests (translate utilities, input validation, rate limiting, date grouping)
+5. `npm run build` — full Next.js production build
+
+Branch protection on `main` requires the pipeline to pass before merging.
 
 ## Running Locally
 
@@ -79,7 +92,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=...
 SUPABASE_SERVICE_ROLE_KEY=...   # server-only; Supabase -> Settings -> API
 ```
 
-Create the `translations` table in the Supabase SQL editor:
+Run the following in the Supabase SQL editor (Dashboard → SQL Editor → New query). Run the two blocks in order:
+
+**1. Create the `translations` table:**
 
 ```sql
 create table if not exists translations (
@@ -94,9 +109,23 @@ create table if not exists translations (
 create index if not exists translations_user_id_created_at_idx
   on translations (user_id, created_at);
 
--- Lock the table down: the public anon key gets no direct access; the server
--- uses the service_role key, which bypasses RLS.
 alter table translations enable row level security;
+```
+
+**2. Create the `users` table and add the FK** (see `supabase/migration_add_users.sql` for the full script including backfill for existing rows):
+
+```sql
+create table if not exists users (
+  id         text        primary key,  -- Clerk userId
+  email      text,
+  created_at timestamptz default now()
+);
+
+alter table translations
+  add constraint translations_user_id_fkey
+  foreign key (user_id) references users(id) on delete cascade;
+
+alter table users enable row level security;
 ```
 
 Start the dev server:
