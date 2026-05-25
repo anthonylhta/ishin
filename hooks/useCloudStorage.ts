@@ -62,7 +62,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
 }
 
 export function useCloudStorage() {
-  const { user, isSignedIn } = useUser();
+  const { isSignedIn } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [groupedMessages, setGroupedMessages] = useState<ReturnType<typeof groupMessagesByDate>>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -77,7 +77,7 @@ export function useCloudStorage() {
     
     if (result.success && result.data) {
       const loadedMessages: ChatMessage[] = [];
-      result.data.forEach((record: any) => {
+      result.data.forEach((record: { id: string; user_text: string; assistant_text: string; tone: string; explanation: string; created_at: string }) => {
         loadedMessages.push({
           id: `${record.id}_user`,
           role: 'user',
@@ -100,10 +100,11 @@ export function useCloudStorage() {
     setIsLoading(false);
   }, [isSignedIn]);
 
-  // Auto-load when user signs in; sync user row in parallel
+  // Auto-load when user signs in; sync user row in parallel.
   useEffect(() => {
     if (isSignedIn) {
       fetch('/api/user/sync', { method: 'POST' }).catch(console.error);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       loadMessages();
     } else {
       setMessages([]);
