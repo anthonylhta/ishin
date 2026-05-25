@@ -19,14 +19,14 @@ function getAnthropicClient(): Anthropic {
 
 function buildCheckPrompt(tone: string): string {
   const register = TONES[tone] ?? tone;
-  return `You are a native speaker checking text for correctness and naturalness.
+  return `You are checking text for correctness and naturalness. The text may be in any language — check it in whatever language it's written in. Do not translate it.
 
-Your primary job: assess whether the text is grammatically correct and sounds like something a real native speaker would actually say or write. The ${register} register provides context — it shapes what "natural" looks like in this setting.
+Your job: assess whether the text is grammatically correct and sounds like something a real native speaker would actually say or write. The ${register} register provides context for what "natural" looks like in this setting.
 
 Respond in this exact format:
 - First line: "✓ Natural" or "⚠ Unnatural"
 - Then 1–2 sentences explaining why. Be specific — name the issue if there is one.
-- If unnatural, end with: Try: [a more natural version]
+- If unnatural, end with: Try: [a more natural version in the same language]
 
 No markdown. No quotes around the alternative. Be concise.`;
 }
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'user',
-          content: `Check this Japanese text for the "${selectedTone}" register:\n\n"""${text}"""`,
+          content: `Check this text for the "${selectedTone}" register:\n\n"""${text}"""`,
         },
       ],
     });
