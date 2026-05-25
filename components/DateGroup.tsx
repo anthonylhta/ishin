@@ -5,6 +5,7 @@ import ChatMessage from './ChatMessage';
 import { ChatMessage as ChatMessageType } from '@/hooks/useCloudStorage';
 
 interface Props {
+  id?: string;
   title: string;
   messages: ChatMessageType[];
   collapsed: boolean;
@@ -12,14 +13,14 @@ interface Props {
   onDeleteMessage: (id: string) => void;
 }
 
-export default function DateGroup({ title, messages, collapsed, onToggle, onDeleteMessage }: Props) {
+export default function DateGroup({ id, title, messages, collapsed, onToggle, onDeleteMessage }: Props) {
   const messageCount = messages.length;
-  
+
   // Count pairs (user + assistant) for display
   const pairCount = Math.ceil(messageCount / 2);
-  
+
   return (
-    <div style={{ marginBottom: '1.5rem' }}>
+    <div id={id} style={{ marginBottom: '1.5rem' }}>
       {/* Group Header */}
       <button
         onClick={onToggle}
