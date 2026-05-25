@@ -10,6 +10,11 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
 
+const VALID_TONES = ['casual', 'polite', 'formal', 'blunt'] as const;
+const MAX_USER_TEXT = 2000;
+const MAX_ASSISTANT_TEXT = 4000;
+const MAX_EXPLANATION = 1000;
+
 // GET - Load all translations for the logged-in user
 export async function GET() {
   try {
@@ -41,6 +46,19 @@ export async function POST(request: NextRequest) {
     }
 
     const { userText, assistantText, tone, explanation } = await request.json();
+
+    if (!userText || typeof userText !== 'string' || userText.length > MAX_USER_TEXT) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+    if (!assistantText || typeof assistantText !== 'string' || assistantText.length > MAX_ASSISTANT_TEXT) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
+    if (!tone || !(VALID_TONES as readonly string[]).includes(tone)) {
+      return NextResponse.json({ error: 'Invalid tone' }, { status: 400 });
+    }
+    if (explanation != null && (typeof explanation !== 'string' || explanation.length > MAX_EXPLANATION)) {
+      return NextResponse.json({ error: 'Invalid input' }, { status: 400 });
+    }
 
     // Ensure the user row exists before inserting (satisfies FK constraint).
     // /api/user/sync handles this on sign-in, but this guards against races.

@@ -12,8 +12,10 @@ const RATE_WINDOW_MS = 60_000; // per minute
 const hits = new Map<string, { count: number; resetAt: number }>();
 
 function getClientIp(request: NextRequest): string {
-  const xff = request.headers.get('x-forwarded-for');
-  if (xff) return xff.split(',')[0].trim();
+  // x-vercel-forwarded-for is set by Vercel infrastructure and cannot be forged by clients.
+  // x-forwarded-for is skipped — its leftmost entry is client-controlled and spoofable.
+  const vercelIp = request.headers.get('x-vercel-forwarded-for');
+  if (vercelIp) return vercelIp.split(',')[0].trim();
   return request.headers.get('x-real-ip') ?? 'unknown';
 }
 
