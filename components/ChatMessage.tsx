@@ -17,10 +17,11 @@ export default function ChatMessage({ message, onDelete }: Props) {
     minute: '2-digit',
   });
 
-  // For finalized check results, split the verdict line from the explanation body
+  // Split check results into verdict line + body — applied during and after streaming
+  // so formatting is visible from the first character, with no layout snap on completion.
   let verdictLine = '';
   let checkBody = '';
-  if (isCheck && !isUser && !message.isStreaming) {
+  if (isCheck && !isUser) {
     const nlIdx = message.text.indexOf('\n');
     if (nlIdx > 0) {
       verdictLine = message.text.slice(0, nlIdx).trim();
@@ -77,31 +78,28 @@ export default function ChatMessage({ message, onDelete }: Props) {
 
         {/* Message text */}
         {isCheck && !isUser ? (
-          message.isStreaming ? (
-            <div style={{ fontSize: '14px', fontFamily: 'var(--font-sans)', lineHeight: 1.5, color: 'var(--text-primary)', wordBreak: 'break-word' }}>
-              {message.text}
+          <>
+            {verdictLine ? (
+              <div style={{
+                fontSize: '15px',
+                fontWeight: 600,
+                fontFamily: 'var(--font-sans)',
+                color: isNatural ? 'var(--accent-gold)' : 'var(--text-primary)',
+                marginBottom: checkBody ? '8px' : 0,
+              }}>
+                {verdictLine}
+                {message.isStreaming && !checkBody && <span className="streaming-cursor" />}
+              </div>
+            ) : message.isStreaming ? (
               <span className="streaming-cursor" />
-            </div>
-          ) : (
-            <>
-              {verdictLine && (
-                <div style={{
-                  fontSize: '15px',
-                  fontWeight: 600,
-                  fontFamily: 'var(--font-sans)',
-                  color: isNatural ? 'var(--accent-gold)' : 'var(--text-primary)',
-                  marginBottom: checkBody ? '8px' : 0,
-                }}>
-                  {verdictLine}
-                </div>
-              )}
-              {checkBody && (
-                <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
-                  {checkBody}
-                </div>
-              )}
-            </>
-          )
+            ) : null}
+            {checkBody && (
+              <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+                {checkBody}
+                {message.isStreaming && <span className="streaming-cursor" />}
+              </div>
+            )}
+          </>
         ) : (
           <div
             style={{
