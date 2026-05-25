@@ -41,18 +41,6 @@ const TONES: Record<string, string> = {
   blunt: 'blunt (直接): terse and direct — abrupt plain forms or imperatives. Reads as curt or commanding.',
 };
 
-const TRANSLATION_SCHEMA = {
-  type: 'object',
-  additionalProperties: false,
-  properties: {
-    detectedSourceLang: { type: 'string', enum: ['en', 'ja'] },
-    targetLang: { type: 'string', enum: ['en', 'ja'] },
-    translation: { type: 'string' },
-    explanation: { type: 'string' },
-  },
-  required: ['detectedSourceLang', 'targetLang', 'translation', 'explanation'],
-};
-
 function buildSystemPrompt(tone: string): string {
   return `You are a native-level Japanese ⇄ English translator. Your output must sound like a real native speaker actually wrote it — natural, idiomatic, and never literal or robotic.
 
@@ -68,7 +56,10 @@ Naturalness comes first:
 - Preserve emoji and kaomoji and the feeling they carry. Keep proper nouns and numbers intact.
 - Output only the message itself — no quotes, notes, or alternatives inside the translation.
 
-Then write a one-sentence explanation IN ENGLISH of any notable nuance, slang, or politeness markers (skip the obvious).`;
+Output format — follow exactly:
+1. The translated text only. No labels, quotes, or surrounding text.
+2. On its own line: [[EXPLANATION]]
+3. One sentence IN ENGLISH about notable nuance, slang, or politeness markers (skip the obvious).`;
 }
 
 export async function POST(request: NextRequest) {
@@ -106,14 +97,11 @@ export async function POST(request: NextRequest) {
 
     const anthropic = new Anthropic({ apiKey });
 
-    const response = await anthropic.messages.create({
+    const stream = anthropic.messages.stream({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 2048,
+      max_tokens: 1024,
       temperature: 0.5,
       system: buildSystemPrompt(selectedTone),
-      output_config: {
-        format: { type: 'json_schema', schema: TRANSLATION_SCHEMA },
-      },
       messages: [
         {
           role: 'user',
@@ -122,33 +110,32 @@ export async function POST(request: NextRequest) {
       ],
     });
 
-    if (response.stop_reason === 'refusal') {
-      return NextResponse.json({ error: 'Unable to translate this text' }, { status: 422 });
-    }
-    if (response.stop_reason === 'max_tokens') {
-      return NextResponse.json({ error: 'Input too long to translate' }, { status: 422 });
-    }
+    const encoder = new TextEncoder();
+    const readable = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of stream) {
+            if (
+              chunk.type === 'content_block_delta' &&
+              chunk.delta.type === 'text_delta'
+            ) {
+              controller.enqueue(encoder.encode(chunk.delta.text));
+            }
+          }
+        } catch (err) {
+          controller.error(err);
+          return;
+        }
+        controller.close();
+      },
+    });
 
-    const block = response.content[0];
-    if (block?.type !== 'text') {
-      console.error('Unexpected content block type:', block?.type);
-      return NextResponse.json({ error: 'Invalid response from Claude' }, { status: 500 });
-    }
-
-    // Structured outputs guarantees schema-valid JSON — no markdown to strip.
-    const parsed = JSON.parse(block.text);
-
-    return NextResponse.json({
-      inputText: text,
-      detectedSourceLang: parsed.detectedSourceLang,
-      targetLang: parsed.targetLang,
-      variants: [
-        {
-          tone: selectedTone,
-          translation: parsed.translation,
-          explanation: parsed.explanation,
-        },
-      ],
+    return new Response(readable, {
+      headers: {
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-cache',
+        'X-Accel-Buffering': 'no',
+      },
     });
   } catch (error) {
     console.error('Translation error:', error);

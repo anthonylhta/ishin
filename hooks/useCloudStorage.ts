@@ -10,6 +10,7 @@ export interface ChatMessage {
   tone?: string;
   explanation?: string;
   timestamp: number;
+  isStreaming?: boolean;
 }
 
 export function groupMessagesByDate(messages: ChatMessage[]) {
@@ -233,6 +234,40 @@ export function useCloudStorage() {
     }
   }, [isSignedIn]);
 
+  const addStreamingMessage = useCallback((tone: string): string => {
+    const id = `streaming_${Date.now()}`;
+    const msg: ChatMessage = {
+      id,
+      role: 'assistant',
+      text: '',
+      tone,
+      timestamp: Date.now() + 1,
+      isStreaming: true,
+    };
+    setMessages(prev => {
+      const updated = [...prev, msg];
+      setGroupedMessages(groupMessagesByDate(updated));
+      return updated;
+    });
+    return id;
+  }, []);
+
+  const updateStreamingMessage = useCallback((id: string, text: string) => {
+    setMessages(prev => {
+      const updated = prev.map(m => (m.id === id ? { ...m, text } : m));
+      setGroupedMessages(groupMessagesByDate(updated));
+      return updated;
+    });
+  }, []);
+
+  const removeStreamingMessage = useCallback((id: string) => {
+    setMessages(prev => {
+      const updated = prev.filter(m => m.id !== id);
+      setGroupedMessages(groupMessagesByDate(updated));
+      return updated;
+    });
+  }, []);
+
   const toggleGroup = useCallback((groupTitle: string) => {
     const collapsedStates = JSON.parse(localStorage.getItem('collapsed_groups') || '{}');
     collapsedStates[groupTitle] = !collapsedStates[groupTitle];
@@ -252,6 +287,9 @@ export function useCloudStorage() {
     isLoading,
     addUserMessage,
     addAssistantMessage,
+    addStreamingMessage,
+    updateStreamingMessage,
+    removeStreamingMessage,
     clearHistory,
     deleteMessage,
     toggleGroup,

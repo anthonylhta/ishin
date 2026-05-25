@@ -25,7 +25,7 @@ export default function Home() {
   const [showClearModal, setShowClearModal] = useState(false);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
-  const { groupedMessages, addUserMessage, addAssistantMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
+  const { groupedMessages, addUserMessage, addAssistantMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -51,6 +51,8 @@ export default function Home() {
     clearHistory();
   };
 
+  const EXPLANATION_MARKER = '[[EXPLANATION]]';
+
   const handleTranslate = async () => {
     if (!inputText.trim() || isLoading) return;
 
@@ -58,13 +60,14 @@ export default function Home() {
     const tone = selectedTone;
 
     setIsLoading(true);
-
     addUserMessage(userText, tone);
     setInputText('');
 
     if (inputRef.current) {
       inputRef.current.style.height = 'auto';
     }
+
+    const streamingId = addStreamingMessage(tone);
 
     try {
       const response = await fetch('/api/translate', {
@@ -73,17 +76,34 @@ export default function Home() {
         body: JSON.stringify({ text: userText, selectedTone: tone }),
       });
 
-      const data = await response.json();
-
-      if (!response.ok) throw new Error(data.error || 'Translation failed');
-
-      const variant = data.variants.find((v: { tone: string }) => v.tone === tone);
-
-      if (variant) {
-        await addAssistantMessage(variant.translation, tone, variant.explanation, userText);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Translation failed');
       }
+
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let fullText = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        fullText += decoder.decode(value, { stream: true });
+
+        const markerIdx = fullText.indexOf(EXPLANATION_MARKER);
+        const displayText = markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText;
+        updateStreamingMessage(streamingId, displayText.trimEnd());
+      }
+
+      const markerIdx = fullText.indexOf(EXPLANATION_MARKER);
+      const translation = (markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText).trim();
+      const explanation = (markerIdx >= 0 ? fullText.slice(markerIdx + EXPLANATION_MARKER.length) : '').trim();
+
+      removeStreamingMessage(streamingId);
+      await addAssistantMessage(translation, tone, explanation, userText);
     } catch (err) {
       console.error(err);
+      removeStreamingMessage(streamingId);
       setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);

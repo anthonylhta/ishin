@@ -71,6 +71,9 @@ export default function ChatMessage({ message, onDelete }: Props) {
           }}
         >
           {message.text}
+          {message.isStreaming && (
+            <span className="streaming-cursor" />
+          )}
         </div>
 
         {/* Explanation for assistant */}
@@ -91,48 +94,50 @@ export default function ChatMessage({ message, onDelete }: Props) {
           </div>
         )}
 
-        {/* Action buttons */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '8px',
-            marginTop: '8px',
-          }}
-        >
-          {!isUser && (
-            <button
-              onClick={handleCopy}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: copied ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                cursor: 'pointer',
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderRadius: '4px',
-              }}
-            >
-              {copied ? '✓ Copied' : 'Copy'}
-            </button>
-          )}
-          {onDelete && (
-            <button
-              onClick={onDelete}
-              style={{
-                background: 'none',
-                border: 'none',
-                color: 'var(--text-tertiary)',
-                cursor: 'pointer',
-                fontSize: '11px',
-                padding: '4px 8px',
-                borderRadius: '4px',
-              }}
-            >
-              ✕
-            </button>
-          )}
-        </div>
+        {/* Action buttons — hidden while streaming */}
+        {!message.isStreaming && (
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '8px',
+              marginTop: '8px',
+            }}
+          >
+            {!isUser && (
+              <button
+                onClick={handleCopy}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: copied ? 'var(--accent-gold)' : 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                }}
+              >
+                {copied ? '✓ Copied' : 'Copy'}
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={onDelete}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  fontSize: '11px',
+                  padding: '4px 8px',
+                  borderRadius: '4px',
+                }}
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
