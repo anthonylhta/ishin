@@ -133,6 +133,12 @@ export default function Home() {
     }
   };
 
+  const scrollToGroup = (title: string) => {
+    document
+      .getElementById(`group-${title.toLowerCase().replace(/\s+/g, '-')}`)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -244,12 +250,53 @@ export default function Home() {
         </div>
       )}
 
-      <div style={{
-        flex: 1,
-        overflowY: 'auto',
-        padding: '16px',
-      }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          {groupedMessages.length > 1 && (
+            <div style={{ position: 'sticky', top: 8, height: 0, overflow: 'visible', zIndex: 10 }}>
+              <div style={{
+                position: 'absolute',
+                left: '100%',
+                marginLeft: '12px',
+                top: 0,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '6px',
+              }}>
+                {groupedMessages.map((group) => (
+                  <button
+                    key={group.title}
+                    onClick={() => scrollToGroup(group.title)}
+                    style={{
+                      background: 'var(--surface-elevated)',
+                      border: '1px solid var(--border)',
+                      borderLeft: '2px solid var(--accent-red)',
+                      borderRadius: '8px',
+                      padding: '6px 14px',
+                      fontSize: '12px',
+                      fontWeight: 500,
+                      color: 'var(--text-secondary)',
+                      cursor: 'pointer',
+                      letterSpacing: '0.3px',
+                      whiteSpace: 'nowrap',
+                      textAlign: 'left',
+                      transition: 'background 0.15s, color 0.15s',
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = 'rgba(192, 57, 43, 0.08)';
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = 'var(--surface-elevated)';
+                      e.currentTarget.style.color = 'var(--text-secondary)';
+                    }}
+                  >
+                    {group.title}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
           {isLoadingHistory ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               Loading your history...
@@ -264,6 +311,7 @@ export default function Home() {
             groupedMessages.map((group, idx) => (
               <DateGroup
                 key={idx}
+                id={`group-${group.title.toLowerCase().replace(/\s+/g, '-')}`}
                 title={group.title}
                 messages={group.messages}
                 collapsed={group.collapsed}
