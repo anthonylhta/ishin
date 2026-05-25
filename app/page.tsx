@@ -21,7 +21,7 @@ export default function Home() {
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('casual');
   const [isLoading, setIsLoading] = useState(false);
-  const [loadingAction, setLoadingAction] = useState<'translate' | 'check' | null>(null);
+  const [checkMode, setCheckMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
 
@@ -74,7 +74,6 @@ export default function Home() {
     const tone = selectedTone;
 
     setIsLoading(true);
-    setLoadingAction('translate');
     addUserMessage(userText, tone);
     setInputText('');
 
@@ -131,7 +130,6 @@ export default function Home() {
       setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
-      setLoadingAction(null);
       inputRef.current?.focus();
     }
   };
@@ -143,7 +141,6 @@ export default function Home() {
     const tone = selectedTone;
 
     setIsLoading(true);
-    setLoadingAction('check');
     addUserMessage(userText, tone, 'check');
     setInputText('');
 
@@ -193,7 +190,6 @@ export default function Home() {
       setToastMessage(err instanceof Error && err.message ? err.message : 'Something went wrong');
     } finally {
       setIsLoading(false);
-      setLoadingAction(null);
       inputRef.current?.focus();
     }
   };
@@ -207,7 +203,8 @@ export default function Home() {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      handleTranslate();
+      if (checkMode) handleCheck();
+      else handleTranslate();
     }
   };
 
@@ -370,7 +367,7 @@ export default function Home() {
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
               <div>Your translations will appear here</div>
-              <div style={{ fontSize: '12px', marginTop: '8px' }}>Translate with → or check naturalness with 確</div>
+              <div style={{ fontSize: '12px', marginTop: '8px' }}>Type below — use the TRANSLATE / CHECK toggle to switch modes</div>
             </div>
           ) : (
             groupedMessages.map((group, idx) => (
@@ -402,7 +399,7 @@ export default function Home() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Enter text... (Enter to send)"
+              placeholder={checkMode ? 'Enter text to check... (Enter to send)' : 'Enter text... (Enter to send)'}
               disabled={isLoading}
               rows={1}
               style={{
@@ -419,27 +416,7 @@ export default function Home() {
               }}
             />
             <button
-              onClick={handleCheck}
-              disabled={isLoading || !inputText.trim()}
-              title="Check naturalness"
-              style={{
-                background: 'var(--surface-elevated)',
-                border: '1px solid var(--border)',
-                borderRadius: '24px',
-                padding: '0 18px',
-                color: 'var(--text-secondary)',
-                fontSize: '16px',
-                fontFamily: 'var(--font-serif)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                opacity: isLoading || !inputText.trim() ? 0.5 : 1,
-                flexShrink: 0,
-              }}
-            >
-              {loadingAction === 'check' ? '⋯' : '確'}
-            </button>
-            <button
-              onClick={handleTranslate}
+              onClick={checkMode ? handleCheck : handleTranslate}
               disabled={isLoading || !inputText.trim()}
               style={{
                 background: 'var(--accent-red)',
@@ -454,30 +431,73 @@ export default function Home() {
                 flexShrink: 0,
               }}
             >
-              {loadingAction === 'translate' ? '⋯' : '→'}
+              {isLoading ? '⋯' : '→'}
             </button>
           </div>
 
-          <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-            {TONES.map((tone) => (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
+              {TONES.map((tone) => (
+                <button
+                  key={tone.id}
+                  onClick={() => selectTone(tone.id)}
+                  style={{
+                    background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '100px',
+                    padding: '6px 16px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {tone.kanji} {tone.label}
+                </button>
+              ))}
+            </div>
+            <div style={{
+              display: 'flex',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '100px',
+              padding: '2px',
+              flexShrink: 0,
+            }}>
               <button
-                key={tone.id}
-                onClick={() => selectTone(tone.id)}
+                onClick={() => setCheckMode(false)}
                 style={{
-                  background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface)',
-                  border: '1px solid var(--border)',
+                  background: !checkMode ? 'var(--surface-elevated)' : 'transparent',
+                  border: 'none',
                   borderRadius: '100px',
-                  padding: '6px 16px',
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: !checkMode ? 600 : 400,
+                  color: !checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
                   cursor: 'pointer',
                   letterSpacing: '0.5px',
                 }}
               >
-                {tone.kanji} {tone.label}
+                TRANSLATE
               </button>
-            ))}
+              <button
+                onClick={() => setCheckMode(true)}
+                style={{
+                  background: checkMode ? 'var(--surface-elevated)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '100px',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: checkMode ? 600 : 400,
+                  color: checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                CHECK
+              </button>
+            </div>
           </div>
         </div>
       </div>
