@@ -7,10 +7,23 @@ import {
   validateTranslationInput,
 } from './utils';
 
+let anthropic: Anthropic | null = null;
+
+function getAnthropicClient(): Anthropic {
+  if (!anthropic) {
+    const apiKey = process.env.CLAUDE_API_KEY;
+    if (!apiKey) throw new Error('CLAUDE_API_KEY is not set');
+    anthropic = new Anthropic({ apiKey });
+  }
+  return anthropic;
+}
+
 export async function POST(request: NextRequest) {
   try {
-    const apiKey = process.env.CLAUDE_API_KEY;
-    if (!apiKey) {
+    let client: Anthropic;
+    try {
+      client = getAnthropicClient();
+    } catch {
       console.error('CLAUDE_API_KEY is not set');
       return NextResponse.json(
         { error: 'Server configuration error' },
@@ -32,9 +45,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validationError.error }, { status: validationError.status });
     }
 
-    const anthropic = new Anthropic({ apiKey });
-
-    const stream = anthropic.messages.stream({
+    const stream = client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       temperature: 0.5,
