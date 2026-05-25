@@ -19,11 +19,7 @@ type ToneId = typeof TONES[number]['id'];
 export default function Home() {
   const { isSignedIn, isLoaded } = useUser();
   const [inputText, setInputText] = useState('');
-  const [selectedTone, setSelectedTone] = useState<ToneId>(() => {
-    if (typeof window === 'undefined') return 'casual';
-    const saved = localStorage.getItem('selectedTone');
-    return (saved && TONES.some((t) => t.id === saved)) ? saved as ToneId : 'casual';
-  });
+  const [selectedTone, setSelectedTone] = useState<ToneId>('casual');
   const [isLoading, setIsLoading] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
@@ -36,6 +32,15 @@ export default function Home() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [groupedMessages]);
+
+  // Restore saved tone after hydration — must be useEffect, not lazy useState, to avoid SSR mismatch.
+  useEffect(() => {
+    const saved = localStorage.getItem('selectedTone');
+    if (saved && TONES.some((t) => t.id === saved)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSelectedTone(saved as ToneId);
+    }
+  }, []);
 
   const selectTone = (id: ToneId) => {
     setSelectedTone(id);
