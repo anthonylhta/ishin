@@ -13,11 +13,11 @@ Japanese to English (and back) translation with tone control. Pick a politeness 
 
 ---
 
-## Screenshots
+<!-- ## Screenshots
 
 | Sign in | Translating | History |
 |---------|-------------|---------|
-| ![Sign in](docs/screenshots/signin.png) | ![Translating](docs/screenshots/translate.png) | ![History](docs/screenshots/history.png) |
+| ![Sign in](docs/screenshots/signin.png) | ![Translating](docs/screenshots/translate.png) | ![History](docs/screenshots/history.png) | -->
 
 ## What it does
 
