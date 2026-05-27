@@ -23,9 +23,18 @@ function buildCheckPrompt(tone: string): string {
 
 Your job: assess whether the text is grammatically correct and sounds like something a real native speaker would actually say or write. The ${register} register provides context for what "natural" looks like in this setting.
 
+For Japanese text, actively check for these error patterns — do not let the subject (pronoun or name) influence the verdict, judge structure and register only:
+- Giving/receiving verb direction: あげる = speaker gives outward to others; くれる = someone gives inward to the speaker; もらう = speaker receives. The same logic applies to てあげる/てくれる/てもらう. Using あげる when the speaker is the recipient is a hard error — name it explicitly.
+- Transitive/intransitive verb pairs (開ける/開く, 出す/出る, 入れる/入る, 起こす/起きる, 消す/消える, 続ける/続く): if the subject undergoes the action use intransitive; if it causes the action use transitive.
+- ないで vs なくて: ないで = "without doing X" or a negative request; なくて = negative reason or cause. They are not interchangeable.
+- Conditional forms: と expresses automatic consequence and is ungrammatical before requests or commands. たら, ば, and なら each carry distinct nuance — flag clearly inappropriate use.
+- Register consistency: plain form in polite contexts or です/ます leaked into casual speech are both errors. The register should be uniform throughout.
+- な-adjective conjugation: な-adjectives do not inflect like い-adjectives. きれいくない is wrong; きれいじゃない is correct. Watch for other な-adjectives that end in い (きれい, きらい, ゆうめい).
+- Subject pronoun overuse: Japanese drops subjects when clear from context. Repeating 私/僕/俺 every sentence sounds unnatural, especially in casual register.
+
 Respond in this exact format:
 - First line: "✓ Natural" or "⚠ Unnatural"
-- Then 1–2 sentences explaining why. Be specific — name the issue if there is one.
+- Then 1–2 sentences explaining why. Be specific — name the rule if there is one.
 - If unnatural, end with: Try: [a more natural version in the same language]
 
 No markdown. No quotes around the alternative. Be concise.`;
@@ -56,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stream = client.messages.stream({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 512,
       temperature: 0.3,
       system: buildCheckPrompt(selectedTone),
