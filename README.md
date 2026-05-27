@@ -27,7 +27,7 @@ Japanese politeness isn't a single setting. The same sentence can be casual betw
 
 - **Tone control**: four politeness registers: 普通 Casual, 丁寧 Polite, 正式 Formal, 直接 Blunt.
 - **Automatic direction detection**: type in either language; it detects the source and translates to the other.
-- **Naturalness check**: switch to CHECK mode and verify whether your Japanese (or English) is grammatically correct and natural for the selected register. Returns a ✓ / ⚠ verdict with a brief explanation, and a suggested fix if something is off.
+- **Naturalness check**: switch to CHECK mode and verify whether your Japanese (or English) is grammatically correct and natural for the selected register. Returns a ✓ / ⚠ verdict with a brief explanation, and a suggested fix if something is off. Powered by Sonnet 4.6 with checks for common Japanese errors including あげる/くれる direction, transitive/intransitive verb pairs, register consistency, and more.
 - **Explanations**: every translation includes a short note on the nuance or cultural choice behind it.
 - **Chat-style history**: translations and checks flow into a conversation view, grouped by date with collapsible sections and a sticky jump nav when multiple groups exist.
 - **Accounts & private history**: sign in and your history is saved to your account across devices.
@@ -40,7 +40,7 @@ Japanese politeness isn't a single setting. The same sentence can be casual betw
 |------|--------|
 | Framework | Next.js 16 (App Router, React 19, Turbopack) |
 | Language | TypeScript |
-| AI | Haiku 4.5 via Anthropic API, streaming output |
+| AI | Haiku 4.5 (translation) + Sonnet 4.6 (naturalness check) via Anthropic API, streaming output |
 | Auth | Clerk |
 | Database | PostgreSQL (Supabase) |
 | Styling | CSS design tokens + Tailwind CSS v4 |
