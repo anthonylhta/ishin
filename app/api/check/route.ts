@@ -56,7 +56,7 @@ export async function POST(request: NextRequest) {
     }
 
     const stream = client.messages.stream({
-      model: 'claude-haiku-4-5-20251001',
+      model: 'claude-sonnet-4-6',
       max_tokens: 512,
       temperature: 0.3,
       system: buildCheckPrompt(selectedTone),
