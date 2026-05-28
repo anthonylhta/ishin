@@ -3,6 +3,7 @@ import {
   getClientIp,
   isRateLimited,
   buildSystemPrompt,
+  buildCheckPrompt,
   validateTranslationInput,
   hits,
   TONES,
@@ -81,6 +82,71 @@ describe('buildSystemPrompt', () => {
 
   it('includes the [[EXPLANATION]] separator instruction', () => {
     expect(buildSystemPrompt('casual')).toContain('[[EXPLANATION]]');
+  });
+
+  // Snapshot the full static body so a stray edit (e.g. a typo in an
+  // instruction word) is caught by the test suite, not in production.
+  // Per-tone interpolation is covered by the toContain tests above.
+  it('matches the snapshot for the casual prompt', () => {
+    expect(buildSystemPrompt('casual')).toMatchInlineSnapshot(`
+      "You are a native-level Japanese ⇄ English translator. Your output must sound like a real native speaker actually wrote it — natural, idiomatic, and never literal or robotic.
+
+      Direction (strict): English input → Japanese. Japanese input → English. For mixed input, translate into the language opposite the dominant one.
+
+      Translate into the "casual" register:
+      casual (普通): how friends actually talk and text — plain form, contractions, slang, and sentence-final particles. Never textbook-stiff.
+
+      Naturalness comes first:
+      - Translate the meaning and the vibe, not the words. Rephrase freely so it reads the way a native would genuinely say it.
+      - Match the source's tone, emotion, and emphasis — keep it light if it's light, dry if it's dry.
+      - Casual especially: use real spoken/texting language — contractions, natural slang, dropped subjects, and sentence-final particles (ね／よ／じゃん／っしょ). Render net-slang and abbreviations idiomatically (e.g. 草 → "lol", りょ → "got it"), never literally.
+      - Preserve emoji and kaomoji and the feeling they carry. Keep proper nouns and numbers intact.
+      - Output only the message itself — no quotes, notes, or alternatives inside the translation.
+
+      Output format — follow exactly:
+      1. The translated text only. No labels, quotes, or surrounding text.
+      2. On its own line: [[EXPLANATION]]
+      3. One sentence IN ENGLISH about notable nuance, slang, or politeness markers (skip the obvious)."
+    `);
+  });
+});
+
+describe('buildCheckPrompt', () => {
+  it.each(Object.keys(TONES))('embeds the "%s" register description', (tone) => {
+    expect(buildCheckPrompt(tone)).toContain(TONES[tone]);
+  });
+
+  it('keeps the verdict format and learner-error checklist', () => {
+    const prompt = buildCheckPrompt('casual');
+    expect(prompt).toContain('✓ Natural');
+    expect(prompt).toContain('⚠ Unnatural');
+    expect(prompt).toContain('Giving/receiving verb direction');
+  });
+
+  // Snapshot the full static body — same typo guard as buildSystemPrompt, for the
+  // longer check prompt that previously lived (untested) inside the check route.
+  it('matches the snapshot for the casual prompt', () => {
+    expect(buildCheckPrompt('casual')).toMatchInlineSnapshot(`
+      "You are checking text for correctness and naturalness. The text may be in any language — check it in whatever language it's written in. Do not translate it.
+
+      Your job: assess whether the text is grammatically correct and sounds like something a real native speaker would actually say or write. The casual (普通): how friends actually talk and text — plain form, contractions, slang, and sentence-final particles. Never textbook-stiff. register provides context for what "natural" looks like in this setting.
+
+      For Japanese text, actively check for these error patterns — do not let the subject (pronoun or name) influence the verdict, judge structure and register only:
+      - Giving/receiving verb direction: あげる = speaker gives outward to others; くれる = someone gives inward to the speaker; もらう = speaker receives. The same logic applies to てあげる/てくれる/てもらう. Using あげる when the speaker is the recipient is a hard error — name it explicitly.
+      - Transitive/intransitive verb pairs (開ける/開く, 出す/出る, 入れる/入る, 起こす/起きる, 消す/消える, 続ける/続く): if the subject undergoes the action use intransitive; if it causes the action use transitive.
+      - ないで vs なくて: ないで = "without doing X" or a negative request; なくて = negative reason or cause. They are not interchangeable.
+      - Conditional forms: と expresses automatic consequence and is ungrammatical before requests or commands. たら, ば, and なら each carry distinct nuance — flag clearly inappropriate use.
+      - Register consistency: plain form in polite contexts or です/ます leaked into casual speech are both errors. The register should be uniform throughout.
+      - な-adjective conjugation: な-adjectives do not inflect like い-adjectives. きれいくない is wrong; きれいじゃない is correct. Watch for other な-adjectives that end in い (きれい, きらい, ゆうめい).
+      - Subject pronoun overuse: Japanese drops subjects when clear from context. Repeating 私/僕/俺 every sentence sounds unnatural, especially in casual register.
+
+      Respond in this exact format:
+      - First line: "✓ Natural" or "⚠ Unnatural"
+      - Then 1–2 sentences explaining why. Be specific — name the rule if there is one.
+      - If unnatural, end with: Try: [a more natural version in the same language]
+
+      No markdown. No quotes around the alternative. Be concise."
+    `);
   });
 });
 
