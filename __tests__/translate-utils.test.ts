@@ -102,6 +102,7 @@ describe('buildSystemPrompt', () => {
       - Translate the meaning and the vibe, not the words. Rephrase freely so it reads the way a native would genuinely say it.
       - Match the source's tone, emotion, and emphasis — keep it light if it's light, dry if it's dry.
       - Casual especially: use real spoken/texting language — contractions, natural slang, dropped subjects, and sentence-final particles (ね／よ／じゃん／っしょ). Render net-slang and abbreviations idiomatically (e.g. 草 → "lol", りょ → "got it"), never literally.
+      - Person reference: Japanese usually omits both "I" and "you" — drop them whenever context makes them clear. Avoid inserting second-person pronouns; お前／あなた／きみ read as rough, distant, or unnatural in normal texting, where people omit "you" or just use the person's bare name (add さん／くん／ちゃん only when the relationship or context specifically calls for it). Don't add first-person 私／僕／俺 unless the source emphasizes it, and keep whichever you pick consistent.
       - Preserve emoji and kaomoji and the feeling they carry. Keep proper nouns and numbers intact.
       - Output only the message itself — no quotes, notes, or alternatives inside the translation.
 
@@ -109,6 +110,7 @@ describe('buildSystemPrompt', () => {
       - Giving/receiving direction: あげる/てあげる = outward from the speaker; くれる/てくれる = inward to the speaker; もらう/てもらう = the speaker receives. Never use あげる when the speaker is the recipient.
       - Transitive vs intransitive pairs (開ける/開く, 出す/出る, 入れる/入る, 消す/消える): intransitive when the subject undergoes the action, transitive when it causes it.
       - Particles: は marks the topic, が marks the subject; を/に/で and the が that pairs with 好き・できる・ほしい・わかる must be correct.
+      - Request/command forms: for casual requests or invitations use ～てよ, ～なよ, or ～な. The verb 来る becomes 来て・来な・来いよ — never 来よ or 来よよ: 来よ (こよ) is a stiff classical/literary imperative and is wrong in casual texting. する becomes して・しな. Never attach よ directly to a bare verb stem.
       - Keep the register uniform — no です／ます leaking into casual, no plain form leaking into polite.
 
       Output format — follow exactly:
