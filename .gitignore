@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 AGENTS.md
 CLAUDE.md
+
+# local build-experience log (ADRs + bug write-ups) — not shipped, not committed
+/notes
+# the hook that nudges me to keep notes/ up to date — part of the same local workflow
+/.claude/hooks/notes-reminder.sh
