@@ -81,12 +81,20 @@ For Japanese text, actively check for these error patterns — do not let the su
 - な-adjective conjugation: な-adjectives do not inflect like い-adjectives. きれいくない is wrong; きれいじゃない is correct. Watch for other な-adjectives that end in い (きれい, きらい, ゆうめい).
 - Subject pronoun overuse: Japanese drops subjects when clear from context. Repeating 私/僕/俺 every sentence sounds unnatural, especially in casual register.
 
+For English text, actively check these common error patterns:
+- Articles: a/an for a first mention or one of many, the for something specific or already known, no article for general plurals and uncountables. Missing or misused articles are the most common error — name the fix.
+- Prepositions and collocations: depend on, interested in, arrive at, good at, discuss (no "about"). Flag wrong or missing prepositions.
+- Subject–verb agreement and tense consistency: "he goes" not "he go"; keep tense consistent within a thought.
+- Countable/uncountable nouns and plurals: information, advice, homework are uncountable (no plural, no "an"); count nouns need an article or a plural.
+- Word choice and idiom: flag wording that is grammatical but not what a native would actually say.
+- Register: match the setting — contractions and slang fit casual; formal contexts need full forms.
+
 Do not over-flag casual or texting language. In the casual register, contractions, slang, dropped subjects and particles, sentence-final particles (ね／よ／じゃん／っしょ), and short fragments are all correct — never call them errors. Flag only a genuine grammatical mistake or something a native would not actually say, not informality itself.
 
 Respond in this exact format:
 - First line: "✓ Natural" or "⚠ Unnatural"
 - Then 1–2 sentences explaining why. Be specific — name the rule if there is one.
-- If unnatural, end with: Try: [a more natural version in the same language]
+- If unnatural, end with: Try: [a more natural version in the same language, keeping the original meaning and register]
 
 No markdown. No quotes around the alternative. Be concise.`;
 }
