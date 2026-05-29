@@ -1,8 +1,8 @@
 # Tone Translator
 
-Japanese to English (and back) translation with tone control. Pick a politeness register, translate, and check whether your Japanese actually sounds natural.
+Japanese ⇄ English translation with tone control. Pick a politeness register, translate, and check whether your Japanese actually sounds natural.
 
-**Live:** [tone.anthonyta.dev](https://tone.anthonyta.dev)
+**Try it live:** [tone.anthonyta.dev](https://tone.anthonyta.dev)
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-black?logo=next.js)
 ![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
@@ -13,57 +13,48 @@ Japanese to English (and back) translation with tone control. Pick a politeness 
 
 ---
 
-<!-- ## Screenshots
-
-| Sign in | Translating | History |
-|---------|-------------|---------|
-| ![Sign in](docs/screenshots/signin.png) | ![Translating](docs/screenshots/translate.png) | ![History](docs/screenshots/history.png) | -->
-
 ## What it does
 
-Japanese politeness isn't a single setting. The same sentence can be casual between friends or stiffly formal in a business email, and choosing wrong is the difference between sounding natural and sounding rude. Tone Translator makes that choice explicit: pick a register, translate, and get a note on the cultural nuance behind the output. When writing in Japanese yourself, use the naturalness check to verify your sentence is correct and sounds like something a native speaker would actually say.
+Japanese politeness isn't a single setting. The same thought can be casual between friends or stiffly formal in a business email, and choosing wrong is the difference between sounding natural and sounding rude. Most translators flatten this — one textbook-stiff output regardless of who you're talking to.
+
+Tone Translator makes the register an explicit choice. Pick how you want to come across, translate in either direction, and get a short note on the nuance behind the result. When you're writing Japanese yourself, switch to check mode to confirm it's grammatical and sounds like something a native would actually say.
+
+The product bias is **naturalness over literalness**, with casual as the primary register — built for real conversations, not textbook sentences.
 
 ## Features
 
-- **Tone control**: four politeness registers: 普通 Casual, 丁寧 Polite, 正式 Formal, 直接 Blunt.
-- **Automatic direction detection**: type in either language; it detects the source and translates to the other.
-- **Naturalness check**: switch to CHECK mode and verify whether your Japanese (or English) is grammatically correct and natural for the selected register. Returns a ✓ / ⚠ verdict with a brief explanation, and a suggested fix if something is off. Powered by Sonnet 4.6 with checks for common Japanese errors including あげる/くれる direction, transitive/intransitive verb pairs, register consistency, and more.
-- **Explanations**: every translation includes a short note on the nuance or cultural choice behind it.
-- **Chat-style history**: translations and checks flow into a conversation view, grouped by date with collapsible sections and a sticky jump nav when multiple groups exist.
-- **Accounts & private history**: sign in and your history is saved to your account across devices.
-- **Manage your history**: copy any result, delete individual entries, or clear everything.
-- **Japanese-inspired UI**: Mincho serif typography, dark palette, custom CSS design tokens.
+- **Tone control** — four registers: 普通 Casual, 丁寧 Polite, 正式 Formal, 直接 Blunt. Casual is the default, tuned to read the way friends actually text.
+- **Automatic direction detection** — type in either language; it detects the source and translates into the other.
+- **Naturalness check** — switch to CHECK mode to verify your Japanese (or English) is correct and natural for the chosen register. Returns a ✓ / ⚠ verdict with a short explanation and a suggested fix, checking for common Japanese mistakes such as giving/receiving direction (あげる/くれる), transitive/intransitive verb pairs, particle choice, and register consistency.
+- **Nuance explanations** — every translation comes with a one-line note on the cultural or stylistic choice behind it.
+- **Chat-style history** — translations and checks flow into a conversation view, grouped by date, with a sticky jump nav once there are several groups.
+- **Accounts & private history** — sign in and your history syncs to your account across devices; guests get an ephemeral, in-memory session.
+- **History management** — copy any result, delete single entries, or clear everything.
+- **Japanese-inspired UI** — Mincho serif typography, a dark palette, and a custom design-token system.
 
-## Tech Stack
+## Tech stack
 
 | Area | Choice |
 |------|--------|
 | Framework | Next.js 16 (App Router, React 19, Turbopack) |
 | Language | TypeScript |
-| AI | Haiku 4.5 (translation) + Sonnet 4.6 (naturalness check) via Anthropic API, streaming output |
+| AI | Claude Haiku (translation) + Claude Sonnet (naturalness check) via the Anthropic API, streamed |
 | Auth | Clerk |
 | Database | PostgreSQL (Supabase) |
 | Styling | CSS design tokens + Tailwind CSS v4 |
 | Hosting | Vercel |
 
-## Architecture Highlights
+## Architecture highlights
 
 - **Per-user data isolation.** Clerk owns authentication; every row is stamped with the Clerk `userId`, and the API scopes all reads, writes, and deletes to the signed-in user. The server uses Supabase's service-role key while Row-Level Security locks the public key out of the table.
-- **Streaming output.** Both the translate and check endpoints stream plain text directly to the client. The translate client splits on a `[[EXPLANATION]]` sentinel; the check client parses the first newline as the verdict/body boundary. Formatting (gold verdict line, smaller body text) is applied from the first character during streaming: no layout snap on completion. Messages are finalized in-place with no visible flash.
-- **Optimistic UI.** Your message appears instantly; the streaming assistant message fills in live. The record is persisted to Supabase after streaming completes and the temp ID is swapped for the real DB ID without any visible change.
-- **IP rate limiting.** Both endpoints enforce 15 requests/minute per IP using an in-memory fixed-window counter. Vercel's `x-vercel-forwarded-for` header is used instead of `x-forwarded-for` to prevent client-side spoofing.
+- **Streaming output.** Both the translate and check endpoints stream plain text directly to the client. The translate client splits on an `[[EXPLANATION]]` sentinel; the check client parses the first newline as the verdict/body boundary. Formatting is applied from the first character during streaming, so there's no layout snap on completion, and messages are finalized in place with no visible flash.
+- **Optimistic UI.** Your message appears instantly and the streaming reply fills in live. The record is persisted after streaming completes, and the temporary ID is swapped for the real database ID with no visible change.
+- **Prompt design as a first-class concern.** Translation and naturalness-check prompts are built by pure, unit-tested functions and guarded by inline snapshots, so an accidental edit fails the test suite instead of silently shipping.
+- **IP rate limiting.** Both endpoints enforce a per-IP request budget using an in-memory fixed-window counter, keyed off Vercel's `x-vercel-forwarded-for` header to prevent client-side spoofing.
 
 ## CI / Quality
 
-Every push and pull request runs a GitHub Actions pipeline:
-
-1. `npm audit --audit-level=high` - blocks on high/critical dependency vulnerabilities
-2. `npx tsc --noEmit` - TypeScript type check
-3. `npm run lint` - ESLint
-4. `npm test` - Vitest unit tests (translate utilities, input validation, rate limiting, date grouping)
-5. `npm run build` - full Next.js production build
-
-Branch protection on `main` requires the pipeline to pass before merging.
+Every push and pull request runs a GitHub Actions pipeline — dependency audit, TypeScript type check, ESLint, Vitest unit tests, and a full production build. Branch protection on `main` requires the pipeline to pass before merging.
 
 ---
 
