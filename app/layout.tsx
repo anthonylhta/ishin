@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import { DM_Sans, Shippori_Mincho } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
+import Script from 'next/script';
 import './globals.css';
-import { Analytics } from "@vercel/analytics/next"
+
+const cfBeaconToken = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
 
 const dmSans = DM_Sans({
   subsets: ['latin'],
@@ -33,8 +35,14 @@ export default function RootLayout({
       <html lang="en" className="dark">
         <body className={`${dmSans.variable} ${shipporiMincho.variable} font-sans antialiased`}>
             {children}
-          {/* Vercel Monitoring */}
-          <Analytics />
+          {/* Cloudflare Web Analytics (Core Web Vitals RUM) — only loads when a beacon token is configured */}
+          {cfBeaconToken && (
+            <Script
+              src="https://static.cloudflareinsights.com/beacon.min.js"
+              strategy="afterInteractive"
+              data-cf-beacon={`{"token": "${cfBeaconToken}"}`}
+            />
+          )}
         </body>
       </html>
     </ClerkProvider>
