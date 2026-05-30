@@ -16,7 +16,7 @@ const TONES = [
 
 type ToneId = typeof TONES[number]['id'];
 
-export default function HomeClient() {
+export default function HomeClient({ initialIsMobile = false }: { initialIsMobile?: boolean }) {
   const { isSignedIn, isLoaded } = useUser();
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('casual');
@@ -24,7 +24,9 @@ export default function HomeClient() {
   const [checkMode, setCheckMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  // Seeded from a server-side User-Agent guess so the first paint matches the
+  // device (no desktop→mobile flash); the matchMedia effect below refines it.
+  const [isMobile, setIsMobile] = useState(initialIsMobile);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
   const { groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
@@ -44,9 +46,9 @@ export default function HomeClient() {
     }
   }, []);
 
-  // Desktop keeps the original composer; mobile gets the redesigned one. Resolve
-  // the breakpoint with matchMedia — the composer only renders after Clerk's
-  // isLoaded (client-side), so window is available.
+  // Desktop keeps the original composer; mobile gets the redesigned one. The
+  // initial value comes from the server-side UA guess; matchMedia refines it on
+  // the client and keeps it correct across resizes / orientation changes.
   useEffect(() => {
     const mq = window.matchMedia('(max-width: 640px)');
     const update = () => setIsMobile(mq.matches);
