@@ -259,27 +259,41 @@ export default function HomeClient() {
     }}>
       <div style={{
         padding: '12px 16px',
+        paddingTop: 'calc(12px + env(safe-area-inset-top))',
         borderBottom: '1px solid var(--border)',
         background: 'rgba(13, 13, 11, 0.95)',
         flexShrink: 0,
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <h1 style={{ fontSize: '1.25rem', margin: 0, fontFamily: 'var(--font-serif)' }}>TONE TRANSLATOR</h1>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-secondary)' }}>敬意を込めて — With Precision</div>
+        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{
+              fontSize: 'clamp(1.05rem, 4.5vw, 1.4rem)',
+              margin: 0,
+              fontFamily: 'var(--font-serif)',
+              letterSpacing: '1px',
+              whiteSpace: 'nowrap',
+            }}>TONE TRANSLATOR</h1>
+            <div style={{
+              fontSize: '0.62rem',
+              color: 'var(--text-secondary)',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}>敬意を込めて — With Precision</div>
           </div>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
             {groupedMessages.length > 0 && (
               <button
                 onClick={() => setShowClearModal(true)}
                 style={{
                   background: 'none',
                   border: '1px solid var(--border)',
-                  borderRadius: '8px',
-                  padding: '4px 12px',
-                  fontSize: '0.7rem',
+                  borderRadius: '100px',
+                  padding: '7px 14px',
+                  fontSize: '0.72rem',
                   color: 'var(--text-secondary)',
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 Clear
@@ -293,11 +307,12 @@ export default function HomeClient() {
                   background: 'var(--accent-red)',
                   border: 'none',
                   borderRadius: '100px',
-                  padding: '6px 16px',
+                  padding: '7px 18px',
                   color: 'white',
                   fontSize: '0.8rem',
                   fontWeight: 600,
                   cursor: 'pointer',
+                  whiteSpace: 'nowrap',
                 }}>
                   Sign In
                 </button>
