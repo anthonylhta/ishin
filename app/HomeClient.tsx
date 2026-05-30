@@ -24,6 +24,7 @@ export default function HomeClient() {
   const [checkMode, setCheckMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
   const { groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
@@ -43,16 +44,29 @@ export default function HomeClient() {
     }
   }, []);
 
-  // Auto-grow the composer textarea with the content, capped so it never takes
-  // over the screen on mobile. Runs on every input change (typing, paste, clear,
-  // example buttons) so the height always tracks the text.
+  // Desktop keeps the original composer; mobile gets the redesigned one. Resolve
+  // the breakpoint with matchMedia — the composer only renders after Clerk's
+  // isLoaded (client-side), so window is available.
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 640px)');
+    const update = () => setIsMobile(mq.matches);
+    update();
+    mq.addEventListener('change', update);
+    return () => mq.removeEventListener('change', update);
+  }, []);
+
+  // Auto-grow the MOBILE composer textarea with content, capped, and only show a
+  // scrollbar once the cap is hit (never on an empty/short field). Desktop uses a
+  // fixed-height box, so this is a no-op there.
   const MAX_INPUT_HEIGHT = 140;
   useEffect(() => {
+    if (!isMobile) return;
     const el = inputRef.current;
     if (!el) return;
     el.style.height = 'auto';
     el.style.height = `${Math.min(el.scrollHeight, MAX_INPUT_HEIGHT)}px`;
-  }, [inputText]);
+    el.style.overflowY = el.scrollHeight > MAX_INPUT_HEIGHT ? 'auto' : 'hidden';
+  }, [inputText, isMobile]);
 
   const selectTone = (id: ToneId) => {
     setSelectedTone(id);
@@ -267,7 +281,7 @@ export default function HomeClient() {
         <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div style={{ minWidth: 0 }}>
             <h1 style={{
-              fontSize: 'clamp(1.05rem, 4.5vw, 1.4rem)',
+              fontSize: 'clamp(1.05rem, 4.5vw, 1.25rem)',
               margin: 0,
               fontFamily: 'var(--font-serif)',
               letterSpacing: '1px',
@@ -458,6 +472,7 @@ export default function HomeClient() {
         padding: '12px 16px',
         paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
       }}>
+        {isMobile ? (
         <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
           {/* Mode — full-width segmented control (changes the primary action) */}
           <div style={{
@@ -544,7 +559,7 @@ export default function HomeClient() {
                 lineHeight: 1.4,
                 resize: 'none',
                 outline: 'none',
-                overflowY: 'auto',
+                overflowY: 'hidden',
                 fontFamily: 'var(--font-sans)',
               }}
             />
@@ -595,6 +610,118 @@ export default function HomeClient() {
             </button>
           </div>
         </div>
+        ) : (
+        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+          <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+            <textarea
+              ref={inputRef}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={checkMode ? 'Enter text to check... (Enter to send)' : 'Enter text... (Enter to send)'}
+              disabled={isLoading}
+              rows={1}
+              style={{
+                flex: 1,
+                minHeight: '160px',
+                background: 'var(--surface)',
+                border: '1px solid var(--border)',
+                borderRadius: '24px',
+                padding: '12px 16px',
+                color: 'var(--text-primary)',
+                fontSize: '14px',
+                lineHeight: 1.6,
+                resize: 'none',
+                outline: 'none',
+                fontFamily: 'var(--font-sans)',
+              }}
+            />
+            <button
+              onClick={checkMode ? handleCheck : handleTranslate}
+              disabled={isLoading || !inputText.trim()}
+              style={{
+                background: 'var(--accent-red)',
+                border: 'none',
+                borderRadius: '24px',
+                padding: '0 24px',
+                color: 'white',
+                fontSize: '18px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                opacity: isLoading || !inputText.trim() ? 0.5 : 1,
+                flexShrink: 0,
+              }}
+            >
+              {isLoading ? '⋯' : '→'}
+            </button>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
+              {TONES.map((tone) => (
+                <button
+                  key={tone.id}
+                  onClick={() => selectTone(tone.id)}
+                  style={{
+                    background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '100px',
+                    padding: '6px 16px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  {tone.kanji} {tone.label}
+                </button>
+              ))}
+            </div>
+            <div style={{
+              display: 'flex',
+              background: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '100px',
+              padding: '2px',
+              flexShrink: 0,
+            }}>
+              <button
+                onClick={() => setCheckMode(false)}
+                style={{
+                  background: !checkMode ? 'var(--surface-elevated)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '100px',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: !checkMode ? 600 : 400,
+                  color: !checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                TRANSLATE
+              </button>
+              <button
+                onClick={() => setCheckMode(true)}
+                style={{
+                  background: checkMode ? 'var(--surface-elevated)' : 'transparent',
+                  border: 'none',
+                  borderRadius: '100px',
+                  padding: '4px 10px',
+                  fontSize: '10px',
+                  fontWeight: checkMode ? 600 : 400,
+                  color: checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  cursor: 'pointer',
+                  letterSpacing: '0.5px',
+                }}
+              >
+                CHECK
+              </button>
+            </div>
+          </div>
+        </div>
+        )}
       </div>
 
       <Toast
