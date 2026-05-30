@@ -94,7 +94,7 @@ export default function ChatMessage({ message, onDelete }: Props) {
               <span className="streaming-cursor" />
             ) : null}
             {checkBody && (
-              <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-secondary)', wordBreak: 'break-word' }}>
+              <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-body)', wordBreak: 'break-word' }}>
                 {checkBody}
                 {message.isStreaming && <span className="streaming-cursor" />}
               </div>
@@ -121,8 +121,9 @@ export default function ChatMessage({ message, onDelete }: Props) {
         {!isUser && message.explanation && (
           <div
             style={{
-              fontSize: '11px',
-              color: 'var(--text-secondary)',
+              fontSize: '12px',
+              lineHeight: 1.5,
+              color: 'var(--text-body)',
               marginTop: '10px',
               paddingTop: '10px',
               borderTop: '1px solid var(--border)',

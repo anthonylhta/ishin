@@ -12,6 +12,9 @@
   --text-primary: #F0EDE8;
   --text-secondary: #8A8580;
   --text-tertiary: #5A5652;
+  /* Body copy — brighter than --text-secondary for readable explanations/check
+     bodies on small, dim phone screens, without the harshness of --text-primary. */
+  --text-body: #C2BDB6;
   --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
@@ -154,6 +157,14 @@ textarea::placeholder {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* The date-jump nav docks outside the right edge of the 800px content column,
+   so it's off-screen on phones/tablets. Only show it when there's room. */
+@media (max-width: 1000px) {
+  .date-jump-nav {
+    display: none;
+  }
 }
 
 .char-counter {

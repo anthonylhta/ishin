@@ -234,7 +234,7 @@ export default function HomeClient() {
   if (!isLoaded) {
     return (
       <div style={{
-        height: '100vh',
+        height: '100dvh',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -252,7 +252,7 @@ export default function HomeClient() {
       top: 0,
       left: 0,
       right: 0,
-      bottom: 0,
+      height: '100dvh',
       display: 'flex',
       flexDirection: 'column',
       background: 'var(--background)',
@@ -353,7 +353,7 @@ export default function HomeClient() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
         <div style={{ maxWidth: '800px', margin: '0 auto' }}>
           {groupedMessages.length > 1 && (
-            <div style={{ position: 'sticky', top: 8, height: 0, overflow: 'visible', zIndex: 10 }}>
+            <div className="date-jump-nav" style={{ position: 'sticky', top: 8, height: 0, overflow: 'visible', zIndex: 10 }}>
               <div style={{
                 position: 'absolute',
                 left: '100%',
@@ -415,7 +415,7 @@ export default function HomeClient() {
                   onClick={() => { setCheckMode(false); selectTone('casual'); setInputText('Are you free tonight?'); inputRef.current?.focus(); }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-red)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', width: '180px', transition: 'all 0.15s' }}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', flex: '1 1 200px', maxWidth: '240px', transition: 'all 0.15s' }}
                 >
                   <div style={{ fontSize: '10px', color: 'var(--accent-red)', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.5px' }}>→ TRANSLATE</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px' }}>&ldquo;Are you free tonight?&rdquo;</div>
@@ -425,7 +425,7 @@ export default function HomeClient() {
                   onClick={() => { setCheckMode(true); selectTone('casual'); setInputText('会議ずらせる？'); inputRef.current?.focus(); }}
                   onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-gold)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', width: '180px', transition: 'all 0.15s' }}
+                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', flex: '1 1 200px', maxWidth: '240px', transition: 'all 0.15s' }}
                 >
                   <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.5px', fontFamily: 'var(--font-serif)' }}>確 CHECK</div>
                   <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'var(--font-serif)' }}>会議ずらせる？</div>
