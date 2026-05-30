@@ -4,6 +4,7 @@ import {
   getClientIp,
   isRateLimited,
   buildSystemPrompt,
+  detectToEnglish,
   validateTranslationInput,
 } from './utils';
 
@@ -45,15 +46,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: validationError.error }, { status: validationError.status });
     }
 
+    const toEnglish = detectToEnglish(text);
+    const userInstruction = toEnglish
+      ? `Translate this Japanese text into English:\n\n"""${text}"""`
+      : `Translate this English text into Japanese in the "${selectedTone}" register:\n\n"""${text}"""`;
+
     const stream = client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 1024,
       temperature: 0.5,
-      system: buildSystemPrompt(selectedTone),
+      system: buildSystemPrompt(selectedTone, toEnglish),
       messages: [
         {
           role: 'user',
-          content: `Translate into the "${selectedTone}" register:\n\n"""${text}"""`,
+          content: userInstruction,
         },
       ],
     });
