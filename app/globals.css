@@ -12,6 +12,9 @@
   --text-primary: #F0EDE8;
   --text-secondary: #8A8580;
   --text-tertiary: #5A5652;
+  /* Body copy — brighter than --text-secondary for readable explanations/check
+     bodies on small, dim phone screens, without the harshness of --text-primary. */
+  --text-body: #C2BDB6;
   --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
 }
 
@@ -140,21 +143,28 @@ h1 {
   box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.1);
 }
 
-textarea {
-  width: 100%;
-  min-height: 160px;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.6;
-  resize: none;
-  outline: none;
-}
+/* NOTE: most selectors in this file are legacy (an earlier non-chat layout) and
+   unused — the live UI is inline-styled. Slated for removal in the speed step. */
 
 textarea::placeholder {
   color: var(--text-tertiary);
+}
+
+/* Hide the scrollbar on the horizontal tone-pill strip in the composer. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* The date-jump nav docks outside the right edge of the 800px content column,
+   so it's off-screen on phones/tablets. Only show it when there's room. */
+@media (max-width: 1000px) {
+  .date-jump-nav {
+    display: none;
+  }
 }
 
 .char-counter {
