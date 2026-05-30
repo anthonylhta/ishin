@@ -1,7 +1,8 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Shippori_Mincho } from 'next/font/google';
 import { ClerkProvider } from '@clerk/nextjs';
 import Script from 'next/script';
+import ServiceWorkerRegistrar from '@/components/ServiceWorkerRegistrar';
 import './globals.css';
 
 const cfBeaconToken = process.env.NEXT_PUBLIC_CF_BEACON_TOKEN;
@@ -23,6 +24,22 @@ const shipporiMincho = Shippori_Mincho({
 export const metadata: Metadata = {
   title: 'Tone Translator | Japanese Politeness Engine',
   description: 'Translate between Japanese and English with cultural precision',
+  applicationName: 'Tone Translator',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Tone',
+  },
+  icons: {
+    apple: '/apple-touch-icon.png',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0D0D0B',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -35,6 +52,7 @@ export default function RootLayout({
       <html lang="en" className="dark">
         <body className={`${dmSans.variable} ${shipporiMincho.variable} font-sans antialiased`}>
             {children}
+          <ServiceWorkerRegistrar />
           {/* Cloudflare Web Analytics (Core Web Vitals RUM) — only loads when a beacon token is configured */}
           {cfBeaconToken && (
             <Script
