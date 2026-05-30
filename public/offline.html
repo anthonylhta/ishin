@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Offline — Tone Translator</title>
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        background: #0D0D0B;
+        color: #F0EDE8;
+        font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
+      }
+      .wrap {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
+      img { width: 72px; height: 72px; margin-bottom: 20px; opacity: 0.9; }
+      h1 { font-size: 1.1rem; margin: 0 0 8px; }
+      p { font-size: 0.85rem; color: #8A8580; margin: 0 0 24px; max-width: 280px; line-height: 1.5; }
+      button {
+        background: #C0392B; color: #fff; border: none; border-radius: 100px;
+        padding: 10px 22px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <img src="/icon-192.png" alt="Tone Translator" />
+      <h1>You're offline</h1>
+      <p>Tone Translator needs a connection to translate. Reconnect and try again.</p>
+      <button onclick="location.reload()">Retry</button>
+    </div>
+  </body>
+</html>
