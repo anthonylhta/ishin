@@ -16,7 +16,7 @@ const dmSans = DM_Sans({
 
 const shipporiMincho = Shippori_Mincho({
   subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
+  weight: ['400', '500', '600'],
   variable: '--font-serif',
   display: 'swap',
 });
