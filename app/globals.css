@@ -140,21 +140,20 @@ h1 {
   box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.1);
 }
 
-textarea {
-  width: 100%;
-  min-height: 160px;
-  background: transparent;
-  border: none;
-  color: var(--text-primary);
-  font-family: var(--font-sans);
-  font-size: 1rem;
-  line-height: 1.6;
-  resize: none;
-  outline: none;
-}
+/* NOTE: most selectors in this file are legacy (an earlier non-chat layout) and
+   unused — the live UI is inline-styled. Slated for removal in the speed step. */
 
 textarea::placeholder {
   color: var(--text-tertiary);
+}
+
+/* Hide the scrollbar on the horizontal tone-pill strip in the composer. */
+.no-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
 .char-counter {

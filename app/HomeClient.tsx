@@ -43,9 +43,32 @@ export default function HomeClient() {
     }
   }, []);
 
+  // Auto-grow the composer textarea with the content, capped so it never takes
+  // over the screen on mobile. Runs on every input change (typing, paste, clear,
+  // example buttons) so the height always tracks the text.
+  const MAX_INPUT_HEIGHT = 140;
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, MAX_INPUT_HEIGHT)}px`;
+  }, [inputText]);
+
   const selectTone = (id: ToneId) => {
     setSelectedTone(id);
     localStorage.setItem('selectedTone', id);
+  };
+
+  const handlePaste = async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      if (text) {
+        setInputText(text);
+        inputRef.current?.focus();
+      }
+    } catch {
+      setToastMessage('Clipboard unavailable — paste with the keyboard instead');
+    }
   };
 
   const handleClearHistory = async () => {
@@ -417,114 +440,144 @@ export default function HomeClient() {
         flexShrink: 0,
         borderTop: '1px solid var(--border)',
         background: 'rgba(13, 13, 11, 0.98)',
-        padding: '16px',
+        padding: '12px 16px',
+        paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '12px' }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          {/* Mode — full-width segmented control (changes the primary action) */}
+          <div style={{
+            display: 'flex',
+            background: 'var(--surface)',
+            border: '1px solid var(--border)',
+            borderRadius: '12px',
+            padding: '3px',
+            gap: '3px',
+          }}>
+            {([['TRANSLATE', false], ['CHECK', true]] as const).map(([label, mode]) => {
+              const active = checkMode === mode;
+              return (
+                <button
+                  key={label}
+                  onClick={() => setCheckMode(mode)}
+                  style={{
+                    flex: 1,
+                    background: active ? 'var(--accent-red)' : 'transparent',
+                    border: 'none',
+                    borderRadius: '9px',
+                    padding: '9px 0',
+                    fontSize: '12px',
+                    fontWeight: active ? 600 : 500,
+                    letterSpacing: '0.5px',
+                    color: active ? '#fff' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                  }}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Tone pills — horizontal scroll, never wraps into a column */}
+          <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            {TONES.map((tone) => {
+              const active = selectedTone === tone.id;
+              return (
+                <button
+                  key={tone.id}
+                  onClick={() => selectTone(tone.id)}
+                  style={{
+                    flexShrink: 0,
+                    background: active ? 'var(--accent-red)' : 'var(--surface)',
+                    border: '1px solid var(--border)',
+                    borderRadius: '100px',
+                    padding: '8px 16px',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    color: active ? '#fff' : 'var(--text-secondary)',
+                    cursor: 'pointer',
+                    letterSpacing: '0.5px',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {tone.kanji} {tone.label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Input row — auto-grow field + fixed-size paste/send buttons */}
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
             <textarea
               ref={inputRef}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={checkMode ? 'Enter text to check... (Enter to send)' : 'Enter text... (Enter to send)'}
+              placeholder={checkMode ? 'Text to check…' : 'Text to translate…'}
               disabled={isLoading}
               rows={1}
               style={{
                 flex: 1,
+                minHeight: '48px',
+                maxHeight: `${MAX_INPUT_HEIGHT}px`,
                 background: 'var(--surface)',
                 border: '1px solid var(--border)',
                 borderRadius: '24px',
-                padding: '12px 16px',
+                padding: '13px 16px',
                 color: 'var(--text-primary)',
-                fontSize: '14px',
+                fontSize: '16px',
+                lineHeight: 1.4,
                 resize: 'none',
                 outline: 'none',
+                overflowY: 'auto',
                 fontFamily: 'var(--font-sans)',
               }}
             />
+            {!inputText.trim() && !isLoading && (
+              <button
+                onClick={handlePaste}
+                aria-label="Paste from clipboard"
+                style={{
+                  flexShrink: 0,
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '50%',
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  fontSize: '17px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                📋
+              </button>
+            )}
             <button
               onClick={checkMode ? handleCheck : handleTranslate}
               disabled={isLoading || !inputText.trim()}
+              aria-label={checkMode ? 'Check' : 'Translate'}
               style={{
+                flexShrink: 0,
+                width: '48px',
+                height: '48px',
+                borderRadius: '50%',
                 background: 'var(--accent-red)',
                 border: 'none',
-                borderRadius: '24px',
-                padding: '0 24px',
-                color: 'white',
-                fontSize: '18px',
+                color: '#fff',
+                fontSize: '20px',
                 fontWeight: 600,
                 cursor: 'pointer',
                 opacity: isLoading || !inputText.trim() ? 0.5 : 1,
-                flexShrink: 0,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
               }}
             >
               {isLoading ? '⋯' : '→'}
             </button>
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', flex: 1 }}>
-              {TONES.map((tone) => (
-                <button
-                  key={tone.id}
-                  onClick={() => selectTone(tone.id)}
-                  style={{
-                    background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '100px',
-                    padding: '6px 16px',
-                    fontSize: '11px',
-                    fontWeight: 500,
-                    color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  {tone.kanji} {tone.label}
-                </button>
-              ))}
-            </div>
-            <div style={{
-              display: 'flex',
-              background: 'var(--surface)',
-              border: '1px solid var(--border)',
-              borderRadius: '100px',
-              padding: '2px',
-              flexShrink: 0,
-            }}>
-              <button
-                onClick={() => setCheckMode(false)}
-                style={{
-                  background: !checkMode ? 'var(--surface-elevated)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '100px',
-                  padding: '4px 10px',
-                  fontSize: '10px',
-                  fontWeight: !checkMode ? 600 : 400,
-                  color: !checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                  cursor: 'pointer',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                TRANSLATE
-              </button>
-              <button
-                onClick={() => setCheckMode(true)}
-                style={{
-                  background: checkMode ? 'var(--surface-elevated)' : 'transparent',
-                  border: 'none',
-                  borderRadius: '100px',
-                  padding: '4px 10px',
-                  fontSize: '10px',
-                  fontWeight: checkMode ? 600 : 400,
-                  color: checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                  cursor: 'pointer',
-                  letterSpacing: '0.5px',
-                }}
-              >
-                CHECK
-              </button>
-            </div>
           </div>
         </div>
       </div>
