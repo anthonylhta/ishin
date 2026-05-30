@@ -245,21 +245,13 @@ export default function HomeClient() {
     }
   };
 
-  if (!isLoaded) {
-    return (
-      <div style={{
-        height: '100dvh',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: 'var(--background)',
-        color: 'var(--text-primary)',
-      }}>
-        Loading...
-      </div>
-    );
-  }
-
+  // NOTE: we intentionally do NOT gate the whole app on Clerk's `isLoaded`.
+  // Doing so made the server-rendered HTML just a "Loading…" screen, so the real
+  // content (LCP) only appeared after Clerk's client JS initialised — ~10s in RUM.
+  // The translator works for guests, so we render the full shell immediately and
+  // only defer the auth-specific controls (header button, guest banner) until
+  // `isLoaded`. SSR and the first client render both see `isLoaded === false`, so
+  // there's no hydration mismatch.
   return (
     <div style={{
       position: 'fixed',
@@ -313,7 +305,11 @@ export default function HomeClient() {
                 Clear
               </button>
             )}
-            {isSignedIn ? (
+            {!isLoaded ? (
+              // Reserve the auth control's space while Clerk initialises so the
+              // header doesn't shift when it resolves.
+              <div aria-hidden style={{ width: '78px', height: '34px' }} />
+            ) : isSignedIn ? (
               <UserButton />
             ) : (
               <SignInButton mode="modal">
@@ -336,7 +332,7 @@ export default function HomeClient() {
         </div>
       </div>
 
-      {!isSignedIn && (
+      {isLoaded && !isSignedIn && (
         <div style={{
           flexShrink: 0,
           padding: '8px 16px',
