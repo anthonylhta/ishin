@@ -3,6 +3,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import {
   getClientIp,
   isRateLimited,
+  isPaused,
   validateTranslationInput,
   buildCheckPrompt,
 } from '../translate/utils';
@@ -19,6 +20,13 @@ function getAnthropicClient(): Anthropic {
 
 export async function POST(request: NextRequest) {
   try {
+    if (isPaused()) {
+      return NextResponse.json(
+        { error: 'Tone Translator is paused right now — please check back soon.' },
+        { status: 503 }
+      );
+    }
+
     let client: Anthropic;
     try {
       client = getAnthropicClient();

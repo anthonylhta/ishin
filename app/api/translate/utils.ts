@@ -34,6 +34,15 @@ export function isRateLimited(ip: string): boolean {
   return false;
 }
 
+// Manual kill-switch / budget safety valve: set TRANSLATIONS_PAUSED=true (or 1)
+// in the environment and the translate + check endpoints return a friendly
+// "paused" message instead of calling Claude. Read at runtime; on Vercel it
+// takes effect on the next deploy after the env var changes.
+export function isPaused(): boolean {
+  const v = process.env.TRANSLATIONS_PAUSED;
+  return v === 'true' || v === '1';
+}
+
 // Any kana or kanji means the source is Japanese, so we translate to English.
 // Direction is resolved here, deterministically, rather than left to the model:
 // when the system prompt is dense with Japanese-output guidance, the model
