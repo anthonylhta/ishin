@@ -276,6 +276,7 @@ export default function HomeClient() {
               fontSize: 'clamp(1.05rem, 4.5vw, 1.25rem)',
               margin: 0,
               fontFamily: 'var(--font-serif)',
+              fontWeight: 600,
               letterSpacing: '1px',
               whiteSpace: 'nowrap',
             }}>TONE TRANSLATOR</h1>
