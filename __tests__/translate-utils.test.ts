@@ -1,7 +1,8 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import {
   getClientIp,
   isRateLimited,
+  isPaused,
   buildSystemPrompt,
   buildCheckPrompt,
   detectToEnglish,
@@ -35,6 +36,33 @@ describe('getClientIp', () => {
 
   it('returns "unknown" when no IP headers are present', () => {
     expect(getClientIp(makeHeaders({}))).toBe('unknown');
+  });
+});
+
+describe('isPaused', () => {
+  const original = process.env.TRANSLATIONS_PAUSED;
+  afterEach(() => {
+    if (original === undefined) delete process.env.TRANSLATIONS_PAUSED;
+    else process.env.TRANSLATIONS_PAUSED = original;
+  });
+
+  it('is false when unset', () => {
+    delete process.env.TRANSLATIONS_PAUSED;
+    expect(isPaused()).toBe(false);
+  });
+
+  it('is true for "true" or "1"', () => {
+    process.env.TRANSLATIONS_PAUSED = 'true';
+    expect(isPaused()).toBe(true);
+    process.env.TRANSLATIONS_PAUSED = '1';
+    expect(isPaused()).toBe(true);
+  });
+
+  it('is false for any other value', () => {
+    process.env.TRANSLATIONS_PAUSED = 'yes';
+    expect(isPaused()).toBe(false);
+    process.env.TRANSLATIONS_PAUSED = 'false';
+    expect(isPaused()).toBe(false);
   });
 });
 
