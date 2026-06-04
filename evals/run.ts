@@ -1,0 +1,165 @@
+// Naturalness eval runner.
+//
+//   npm run eval            # one pass over the golden set
+//   EVAL_REPEATS=3 npm run eval   # average each case over N translations
+//
+// For each case it calls the REAL shipping translate prompt (buildSystemPrompt
+// + the same model/params as app/api/translate/route.ts), then asks Sonnet to
+// grade the output. Prints a scorecard and writes a timestamped JSON snapshot to
+// evals/scorecards/ (gitignored) so runs can be diffed across model/prompt
+// changes. Manual + costs real API calls — never wire this into CI.
+
+import Anthropic from '@anthropic-ai/sdk';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { buildSystemPrompt, detectToEnglish } from '../app/api/translate/utils';
+import { buildJudgePrompt, parseVerdict } from './judge';
+import type { CaseResult, GoldenCase, Verdict } from './types';
+
+// Keep in sync with app/api/translate/route.ts.
+const TRANSLATE_MODEL = 'claude-haiku-4-5-20251001';
+const TRANSLATE_MAX_TOKENS = 1024;
+const TRANSLATE_TEMPERATURE = 0.5;
+
+// The grader. A stronger model than the translator, at temperature 0.
+const JUDGE_MODEL = 'claude-sonnet-4-6';
+
+const REPEATS = Math.max(1, Number(process.env.EVAL_REPEATS ?? '1') || 1);
+
+const EVALS_DIR = resolve(import.meta.dirname);
+
+function textOf(msg: Anthropic.Message): string {
+  return msg.content
+    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
+    .map((b) => b.text)
+    .join('');
+}
+
+// Produce one translation with the exact prompt + params the app ships, and
+// strip the trailing [[EXPLANATION]]/[[MAX_TOKENS]] markers so the judge grades
+// only the translated message.
+async function translate(client: Anthropic, c: GoldenCase): Promise<string> {
+  const toEnglish = detectToEnglish(c.input);
+  const userInstruction = toEnglish
+    ? `Translate this Japanese text into English:\n\n"""${c.input}"""`
+    : `Translate this English text into Japanese in the "${c.tone}" register:\n\n"""${c.input}"""`;
+
+  const msg = await client.messages.create({
+    model: TRANSLATE_MODEL,
+    max_tokens: TRANSLATE_MAX_TOKENS,
+    temperature: TRANSLATE_TEMPERATURE,
+    system: buildSystemPrompt(c.tone, toEnglish),
+    messages: [{ role: 'user', content: userInstruction }],
+  });
+
+  return textOf(msg).split('[[EXPLANATION]]')[0].replace('[[MAX_TOKENS]]', '').trim();
+}
+
+async function judge(client: Anthropic, c: GoldenCase, output: string): Promise<Verdict> {
+  const msg = await client.messages.create({
+    model: JUDGE_MODEL,
+    max_tokens: 512,
+    temperature: 0,
+    messages: [{ role: 'user', content: buildJudgePrompt(c.input, c.tone, c.watch_for, output) }],
+  });
+  return parseVerdict(textOf(msg));
+}
+
+// Translate + grade a case REPEATS times and fold into one result: average
+// score, "natural"/"passed" by majority, "violated" if it ever happened.
+async function runCase(client: Anthropic, c: GoldenCase): Promise<CaseResult> {
+  const verdicts: Verdict[] = [];
+  let lastOutput = '';
+  for (let i = 0; i < REPEATS; i++) {
+    lastOutput = await translate(client, c);
+    verdicts.push(await judge(client, c, lastOutput));
+  }
+
+  const avgScore = verdicts.reduce((s, v) => s + v.score, 0) / verdicts.length;
+  const naturalCount = verdicts.filter((v) => v.natural).length;
+  const natural = naturalCount > verdicts.length / 2;
+  const violated = verdicts.some((v) => v.watch_for_violated);
+  const issues = [...new Set(verdicts.flatMap((v) => v.issues))];
+
+  return {
+    id: c.id,
+    input: c.input,
+    tone: c.tone,
+    regression_of: c.regression_of,
+    output: lastOutput,
+    score: Math.round(avgScore * 100) / 100,
+    natural,
+    watch_for_violated: violated,
+    issues,
+    passed: natural && !violated,
+  };
+}
+
+async function main(): Promise<void> {
+  const apiKey = process.env.CLAUDE_API_KEY;
+  if (!apiKey) {
+    console.error('CLAUDE_API_KEY is not set. Add it to your environment and re-run.');
+    process.exit(1);
+  }
+  const client = new Anthropic({ apiKey });
+
+  const cases = JSON.parse(
+    readFileSync(resolve(EVALS_DIR, 'golden-set.json'), 'utf8')
+  ) as GoldenCase[];
+
+  console.log(`Running ${cases.length} cases × ${REPEATS} repeat(s) — model ${TRANSLATE_MODEL}, judge ${JUDGE_MODEL}\n`);
+
+  const results: CaseResult[] = [];
+  for (const c of cases) {
+    const r = await runCase(client, c);
+    results.push(r);
+    const mark = r.passed ? '✓' : '✗';
+    console.log(`${mark} ${r.id.padEnd(28)} score ${r.score}${r.watch_for_violated ? '  [WATCH_FOR VIOLATED]' : ''}`);
+  }
+
+  const passed = results.filter((r) => r.passed).length;
+  const avg = results.reduce((s, r) => s + r.score, 0) / results.length;
+
+  console.log('\n--- failures ---');
+  const failures = results.filter((r) => !r.passed);
+  if (failures.length === 0) {
+    console.log('none 🎉');
+  } else {
+    for (const f of failures) {
+      console.log(`\n✗ ${f.id} (score ${f.score})`);
+      console.log(`  in:  ${f.input}`);
+      console.log(`  out: ${f.output}`);
+      if (f.issues.length) console.log(`  why: ${f.issues.join('; ')}`);
+    }
+  }
+
+  console.log(`\n${passed}/${results.length} passed · avg score ${(Math.round(avg * 100) / 100).toFixed(2)}`);
+
+  const scorecardsDir = resolve(EVALS_DIR, 'scorecards');
+  mkdirSync(scorecardsDir, { recursive: true });
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+  const file = resolve(scorecardsDir, `${stamp}.json`);
+  writeFileSync(
+    file,
+    JSON.stringify(
+      {
+        ranAt: new Date().toISOString(),
+        translateModel: TRANSLATE_MODEL,
+        judgeModel: JUDGE_MODEL,
+        repeats: REPEATS,
+        passed,
+        total: results.length,
+        avgScore: Math.round(avg * 100) / 100,
+        results,
+      },
+      null,
+      2
+    )
+  );
+  console.log(`\nScorecard written to ${file}`);
+}
+
+main().catch((err: unknown) => {
+  console.error(err);
+  process.exit(1);
+});
