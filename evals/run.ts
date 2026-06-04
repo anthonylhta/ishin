@@ -96,6 +96,15 @@ async function runCase(client: Anthropic, c: GoldenCase): Promise<CaseResult> {
 }
 
 async function main(): Promise<void> {
+  // Standalone tsx scripts don't get Next.js's automatic .env.local loading, so
+  // pull CLAUDE_API_KEY from the project's .env.local the way the app would.
+  // Falls through silently if there's no file (e.g. the key is already exported).
+  try {
+    process.loadEnvFile(resolve(EVALS_DIR, '..', '.env.local'));
+  } catch {
+    // no .env.local — use whatever is already in the environment
+  }
+
   const apiKey = process.env.CLAUDE_API_KEY;
   if (!apiKey) {
     console.error('CLAUDE_API_KEY is not set. Add it to your environment and re-run.');
