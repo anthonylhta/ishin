@@ -13,6 +13,9 @@
 # testing
 /coverage
 
+# eval scorecards — non-deterministic API output, not worth committing (the golden set is)
+/evals/scorecards
+
 # next.js
 /.next/
 /out/
