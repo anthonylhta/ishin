@@ -14,7 +14,7 @@ import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { buildSystemPrompt, detectToEnglish } from '../app/api/translate/utils';
 import { buildJudgePrompt, parseVerdict } from './judge';
-import type { CaseResult, GoldenCase, Verdict } from './types';
+import type { CaseResult, GoldenCase, RunSample, Verdict } from './types';
 
 // Keep in sync with app/api/translate/route.ts.
 const TRANSLATE_MODEL = 'claude-haiku-4-5-20251001';
@@ -66,31 +66,29 @@ async function judge(client: Anthropic, c: GoldenCase, output: string): Promise<
 }
 
 // Translate + grade a case REPEATS times and fold into one result: average
-// score, "natural"/"passed" by majority, "violated" if it ever happened.
+// score, "natural"/"passed" by majority, "violated" if it ever happened. Each
+// repeat's own output+verdict is kept (runs[]) so flaky cases stay legible.
 async function runCase(client: Anthropic, c: GoldenCase): Promise<CaseResult> {
-  const verdicts: Verdict[] = [];
-  let lastOutput = '';
+  const runs: RunSample[] = [];
   for (let i = 0; i < REPEATS; i++) {
-    lastOutput = await translate(client, c);
-    verdicts.push(await judge(client, c, lastOutput));
+    const output = await translate(client, c);
+    runs.push({ output, ...(await judge(client, c, output)) });
   }
 
-  const avgScore = verdicts.reduce((s, v) => s + v.score, 0) / verdicts.length;
-  const naturalCount = verdicts.filter((v) => v.natural).length;
-  const natural = naturalCount > verdicts.length / 2;
-  const violated = verdicts.some((v) => v.watch_for_violated);
-  const issues = [...new Set(verdicts.flatMap((v) => v.issues))];
+  const avgScore = runs.reduce((s, r) => s + r.score, 0) / runs.length;
+  const naturalCount = runs.filter((r) => r.natural).length;
+  const natural = naturalCount > runs.length / 2;
+  const violated = runs.some((r) => r.watch_for_violated);
 
   return {
     id: c.id,
     input: c.input,
     tone: c.tone,
     regression_of: c.regression_of,
-    output: lastOutput,
+    runs,
     score: Math.round(avgScore * 100) / 100,
     natural,
     watch_for_violated: violated,
-    issues,
     passed: natural && !violated,
   };
 }
@@ -135,10 +133,13 @@ async function main(): Promise<void> {
     console.log('none 🎉');
   } else {
     for (const f of failures) {
-      console.log(`\n✗ ${f.id} (score ${f.score})`);
+      console.log(`\n✗ ${f.id} (avg score ${f.score})`);
       console.log(`  in:  ${f.input}`);
-      console.log(`  out: ${f.output}`);
-      if (f.issues.length) console.log(`  why: ${f.issues.join('; ')}`);
+      f.runs.forEach((run, i) => {
+        const flag = run.watch_for_violated ? ' [VIOLATED]' : '';
+        console.log(`  run ${i + 1} (score ${run.score}${flag}): ${run.output}`);
+        if (run.issues.length) console.log(`    why: ${run.issues.join('; ')}`);
+      });
     }
   }
 

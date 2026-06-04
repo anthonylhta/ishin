@@ -22,13 +22,24 @@ export interface Verdict {
   issues: string[];
 }
 
-// One row in the scorecard: the case, what the translator produced, and the
-// averaged verdict across repeats.
-export interface CaseResult extends Verdict {
+// One repeat: the exact output produced and the verdict on THAT output. Stored
+// per-repeat so a flaky case (different output each run) is legible — the
+// alternative of keeping one output but all repeats' issues describes outputs
+// you can't see.
+export interface RunSample extends Verdict {
+  output: string;
+}
+
+// One row in the scorecard: the case plus every repeat, with the aggregated
+// verdict across them.
+export interface CaseResult {
   id: string;
   input: string;
   tone: ToneId;
-  output: string;
   regression_of?: string;
+  runs: RunSample[];
+  score: number; // mean across repeats
+  natural: boolean; // majority across repeats
+  watch_for_violated: boolean; // true if any repeat violated
   passed: boolean; // natural && !watch_for_violated
 }
