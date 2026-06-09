@@ -113,5 +113,11 @@
     "input": "haha no worries, take your time!",
     "tone": "casual",
     "watch_for": "Keep it light and warm (大丈夫だよ〜 ゆっくりで！ style with ね/よ/〜). Don't flatten the friendly vibe into something flat or stiff."
+  },
+  {
+    "id": "currency-infer-source",
+    "input": "i have 1k in cash, what should i spend it on?",
+    "tone": "casual",
+    "watch_for": "1k = $1000 (English speaker, no explicit currency → dollars). Must render as 1000ドル or keep dollars — 1000円 wrongly defaults to the target-language currency and changes the amount ~150×."
   }
 ]
