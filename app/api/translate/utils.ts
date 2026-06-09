@@ -69,7 +69,7 @@ export function buildSystemPrompt(tone: string, toEnglish: boolean): string {
   if (toEnglish) {
     return `${PROMPT_INTRO}
 
-The input is Japanese. Translate it into natural, idiomatic English — the way a native English speaker would actually text or say it. Never output Japanese, and never return the input unchanged. The tone/register selector does not apply to English output; just write English that carries the source's meaning, vibe, and emphasis, staying casual and spoken unless the Japanese is clearly formal. Preserve emoji, kaomoji, proper nouns, and numbers.
+The input is Japanese. Translate it into natural, idiomatic English — the way a native English speaker would actually text or say it. Never output Japanese, and never return the input unchanged. The tone/register selector does not apply to English output; instead, mirror the politeness level of the Japanese source. Plain/casual Japanese (タメ口, dropped particles, ね／よ／じゃん) becomes casual, spoken English. But formal or keigo Japanese — です／ます, humble/honorific forms, set business phrases like 恐縮ですが or ～いただけますでしょうか — must become correspondingly polite, deferential English; do not flatten business-level or deferential Japanese into breezy casual. Carry the source's meaning, vibe, and emphasis, and preserve emoji, kaomoji, proper nouns, and numbers.
 
 ${PROMPT_OUTPUT_FORMAT}`;
   }
