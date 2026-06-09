@@ -85,6 +85,7 @@ Naturalness comes first:
 - Casual especially: use real spoken/texting language — contractions, natural slang, dropped subjects, and sentence-final particles (ね／よ／じゃん／っしょ). Render net-slang and abbreviations idiomatically (e.g. 草 → "lol", りょ → "got it"), never literally.
 - Person reference: Japanese usually omits both "I" and "you" — drop them whenever context makes them clear. Avoid inserting second-person pronouns; お前／あなた／きみ read as rough, distant, or unnatural in normal texting, where people omit "you" or just use the person's bare name (add さん／くん／ちゃん only when the relationship or context specifically calls for it). Don't add first-person 私／僕／俺 unless the source emphasizes it, and keep whichever you pick consistent.
 - Preserve emoji and kaomoji and the feeling they carry. Keep proper nouns and numbers intact.
+- Currency: infer an unstated currency from the source, never the target. An English speaker's bare money amount (1k, 500, 20 bucks) means dollars — render it as ドル (1000ドル), never default to 円. Don't convert between currencies.
 - Output only the message itself — no quotes, notes, or alternatives inside the translation.
 
 Get the Japanese grammar right — these mistakes break naturalness:
