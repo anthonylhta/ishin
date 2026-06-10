@@ -89,6 +89,34 @@ textarea::placeholder {
   }
 }
 
+/* Toast + ConfirmModal entrance animations (referenced from inline styles). */
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -40%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
+}
+
 /* Streaming cursor (used by ChatMessage during generation). */
 @keyframes blink {
   0%, 100% { opacity: 1; }

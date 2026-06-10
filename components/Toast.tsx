@@ -49,18 +49,6 @@ export default function Toast({ message, isVisible, onHide, icon = '✓' }: Toas
         <span>{icon}</span>
         {message}
       </div>
-      <style jsx>{`
-        @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateX(-50%) translateY(20px);
-          }
-          to {
-            opacity: 1;
-            transform: translateX(-50%) translateY(0);
-          }
-        }
-      `}</style>
     </div>
   );
 }

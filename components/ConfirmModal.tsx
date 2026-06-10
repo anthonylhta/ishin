@@ -193,28 +193,6 @@ export default function ConfirmModal({
           </button>
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-          }
-          to {
-            opacity: 1;
-          }
-        }
-        
-        @keyframes modalSlideUp {
-          from {
-            opacity: 0;
-            transform: translate(-50%, -40%);
-          }
-          to {
-            opacity: 1;
-            transform: translate(-50%, -50%);
-          }
-        }
-      `}</style>
     </>
   );
 }

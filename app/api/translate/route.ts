@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Anthropic from '@anthropic-ai/sdk';
+import { getAnthropicClient } from '../anthropic';
 import {
   getClientIp,
   isRateLimited,
@@ -8,17 +9,6 @@ import {
   detectToEnglish,
   validateTranslationInput,
 } from './utils';
-
-let anthropic: Anthropic | null = null;
-
-function getAnthropicClient(): Anthropic {
-  if (!anthropic) {
-    const apiKey = process.env.CLAUDE_API_KEY;
-    if (!apiKey) throw new Error('CLAUDE_API_KEY is not set');
-    anthropic = new Anthropic({ apiKey });
-  }
-  return anthropic;
-}
 
 export async function POST(request: NextRequest) {
   try {
