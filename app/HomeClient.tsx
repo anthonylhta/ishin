@@ -129,13 +129,14 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     }
   };
 
-  const handleDeleteMessage = async (id: string) => {
+  // Stable identity — flows down to every memoized ChatMessage as onDelete.
+  const handleDeleteMessage = useCallback(async (id: string) => {
     try {
       await deleteMessage(id);
     } catch {
       setToastMessage('Failed to delete translation — please try again');
     }
-  };
+  }, [deleteMessage]);
 
   const handleTranslate = async () => {
     if (!inputText.trim() || isLoading) return;
