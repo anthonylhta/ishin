@@ -14,6 +14,17 @@ export interface ChatMessage {
   isStreaming?: boolean;
 }
 
+// Read the collapsed-state map from localStorage, treating a missing or
+// corrupted value as "nothing collapsed" rather than letting JSON.parse throw.
+// Client-only — callers must guard against SSR.
+function readCollapsedGroups(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem('collapsed_groups') || '{}');
+  } catch {
+    return {};
+  }
+}
+
 export function groupMessagesByDate(messages: ChatMessage[]) {
   const groups: { title: string; messages: ChatMessage[]; collapsed?: boolean }[] = [];
   const today = new Date();
@@ -55,10 +66,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
   if (currentGroup) groups.push(currentGroup);
 
   // Guard localStorage access for SSR
-  const collapsedStates: Record<string, boolean> =
-    typeof window !== 'undefined'
-      ? JSON.parse(localStorage.getItem('collapsed_groups') || '{}')
-      : {};
+  const collapsedStates = typeof window !== 'undefined' ? readCollapsedGroups() : {};
 
   return groups.map(group => ({
     ...group,
@@ -197,22 +205,23 @@ export function useCloudStorage() {
         body: JSON.stringify({ userText, assistantText: text, tone, explanation, message_type: kind }),
       });
       const result = await response.json();
-      if (result.success) {
-        setMessages(prev => {
-          const tempUser = prev.find(
-            m => m.role === 'user' && m.text === userText && m.tone === tone && m.id.startsWith('temp_')
-          );
-          const userTimestamp = tempUser?.timestamp ?? Date.now();
-          const withoutTempUser = prev.filter(m => m !== tempUser);
-          const withRealAssistantId = withoutTempUser.map(m =>
-            m.id === streamingId ? { ...m, id: `${result.data.id}_assistant` } : m
-          );
-          return [
-            ...withRealAssistantId,
-            { id: `${result.data.id}_user`, role: 'user' as const, text: userText, tone, timestamp: userTimestamp },
-          ];
-        });
-      }
+      // A 4xx/5xx response resolves the fetch — without this throw the message
+      // would stay on screen looking saved when it never persisted.
+      if (!result.success) throw new Error(result.error || 'Failed to save translation');
+      setMessages(prev => {
+        const tempUser = prev.find(
+          m => m.role === 'user' && m.text === userText && m.tone === tone && m.id.startsWith('temp_')
+        );
+        const userTimestamp = tempUser?.timestamp ?? Date.now();
+        const withoutTempUser = prev.filter(m => m !== tempUser);
+        const withRealAssistantId = withoutTempUser.map(m =>
+          m.id === streamingId ? { ...m, id: `${result.data.id}_assistant` } : m
+        );
+        return [
+          ...withRealAssistantId,
+          { id: `${result.data.id}_user`, role: 'user' as const, text: userText, tone, timestamp: userTimestamp },
+        ];
+      });
     } catch (err) {
       console.error('Failed to save translation:', err);
       // Remove the ghost message — it was never persisted and can't be deleted later
@@ -244,7 +253,7 @@ export function useCloudStorage() {
   }, []);
 
   const toggleGroup = useCallback((groupTitle: string) => {
-    const collapsedStates = JSON.parse(localStorage.getItem('collapsed_groups') || '{}');
+    const collapsedStates = readCollapsedGroups();
     collapsedStates[groupTitle] = !collapsedStates[groupTitle];
     localStorage.setItem('collapsed_groups', JSON.stringify(collapsedStates));
     setCollapsedVersion(v => v + 1);
@@ -270,7 +279,9 @@ export function useCloudStorage() {
     const response = await fetch(`/api/translations?id=${dbId}`, { method: 'DELETE' });
     const result = await response.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete translation');
-    setMessages(prev => prev.filter(m => !m.id.startsWith(dbId)));
+    // Match "<dbId>_" exactly — a bare startsWith(dbId) would also catch ids
+    // that merely share a prefix (e.g. "1" matching "10_user").
+    setMessages(prev => prev.filter(m => !m.id.startsWith(`${dbId}_`)));
   }, [isSignedIn]);
 
   return {
