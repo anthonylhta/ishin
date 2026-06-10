@@ -16,6 +16,26 @@ const TONES = [
 
 type ToneId = typeof TONES[number]['id'];
 
+const EXPLANATION_MARKER = '[[EXPLANATION]]';
+
+// Sentinel markers the API can emit that must never be shown — even partially.
+// While streaming they arrive a few characters at a time, and indexOf only
+// matches a marker once complete, so without this a partial "[[EXPLA" or
+// "[[MAX_TOK" flashes in the live bubble. Trim any suffix that is a (possibly
+// complete) prefix of a marker.
+const STREAM_MARKERS = [EXPLANATION_MARKER, '[[MAX_TOKENS]]'];
+
+function stripPartialMarker(text: string): string {
+  for (const marker of STREAM_MARKERS) {
+    for (let len = Math.min(marker.length, text.length); len > 0; len--) {
+      if (text.endsWith(marker.slice(0, len))) {
+        return text.slice(0, text.length - len);
+      }
+    }
+  }
+  return text;
+}
+
 export default function HomeClient({ initialIsMobile = false }: { initialIsMobile?: boolean }) {
   const { isSignedIn, isLoaded } = useUser();
   const [inputText, setInputText] = useState('');
@@ -113,8 +133,6 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     }
   };
 
-  const EXPLANATION_MARKER = '[[EXPLANATION]]';
-
   const handleTranslate = async () => {
     if (!inputText.trim() || isLoading) return;
 
@@ -153,7 +171,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         fullText += decoder.decode(value, { stream: true });
 
         const markerIdx = fullText.indexOf(EXPLANATION_MARKER);
-        const displayText = markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText;
+        const displayText = markerIdx >= 0 ? fullText.slice(0, markerIdx) : stripPartialMarker(fullText);
         updateStreamingMessage(streamingId, displayText.trimEnd());
       }
       // Flush any buffered multi-byte UTF-8 sequences from the decoder
@@ -218,7 +236,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         const { done, value } = await reader.read();
         if (done) break;
         fullText += decoder.decode(value, { stream: true });
-        updateStreamingMessage(streamingId, fullText);
+        updateStreamingMessage(streamingId, stripPartialMarker(fullText).trimEnd());
       }
       fullText += decoder.decode();
 
