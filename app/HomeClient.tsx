@@ -482,9 +482,9 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
               </div>
             </div>
           ) : (
-            groupedMessages.map((group, idx) => (
+            groupedMessages.map((group) => (
               <DateGroup
-                key={idx}
+                key={group.title}
                 id={`group-${group.title.toLowerCase().replace(/\s+/g, '-')}`}
                 title={group.title}
                 messages={group.messages}
