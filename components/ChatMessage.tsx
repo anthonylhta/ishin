@@ -32,10 +32,15 @@ export default function ChatMessage({ message, onDelete }: Props) {
   }
   const isNatural = verdictLine.startsWith('✓');
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(message.text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(message.text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard can be unavailable (permissions, unfocused document) —
+      // leave the button as "Copy" instead of falsely confirming.
+    }
   };
 
   return (

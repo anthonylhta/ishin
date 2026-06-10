@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useCloudStorage } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
@@ -16,6 +16,26 @@ const TONES = [
 
 type ToneId = typeof TONES[number]['id'];
 
+const EXPLANATION_MARKER = '[[EXPLANATION]]';
+
+// Sentinel markers the API can emit that must never be shown — even partially.
+// While streaming they arrive a few characters at a time, and indexOf only
+// matches a marker once complete, so without this a partial "[[EXPLA" or
+// "[[MAX_TOK" flashes in the live bubble. Trim any suffix that is a (possibly
+// complete) prefix of a marker.
+const STREAM_MARKERS = [EXPLANATION_MARKER, '[[MAX_TOKENS]]'];
+
+function stripPartialMarker(text: string): string {
+  for (const marker of STREAM_MARKERS) {
+    for (let len = Math.min(marker.length, text.length); len > 0; len--) {
+      if (text.endsWith(marker.slice(0, len))) {
+        return text.slice(0, text.length - len);
+      }
+    }
+  }
+  return text;
+}
+
 export default function HomeClient({ initialIsMobile = false }: { initialIsMobile?: boolean }) {
   const { isSignedIn, isLoaded } = useUser();
   const [inputText, setInputText] = useState('');
@@ -29,13 +49,22 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
   const [isMobile, setIsMobile] = useState(initialIsMobile);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
-  const { groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
+  const { messages, groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Follow new and streaming messages only. Scrolling on every groupedMessages
+  // change yanked the viewport to the bottom on collapse toggles and on
+  // deleting an old message; depending on messages and gating on growth or an
+  // active stream scrolls exactly when new content appears at the bottom.
+  const prevMessageCount = useRef(0);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [groupedMessages]);
+    const grew = messages.length > prevMessageCount.current;
+    prevMessageCount.current = messages.length;
+    if (grew || messages[messages.length - 1]?.isStreaming) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // Restore saved tone after hydration — must be useEffect, not lazy useState, to avoid SSR mismatch.
   useEffect(() => {
@@ -75,6 +104,10 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     localStorage.setItem('selectedTone', id);
   };
 
+  // Stable identity — Toast's auto-hide effect depends on onHide, so an inline
+  // closure would reset the timer on every HomeClient re-render (e.g. typing).
+  const hideToast = useCallback(() => setToastMessage(null), []);
+
   const handlePaste = async () => {
     try {
       const text = await navigator.clipboard.readText();
@@ -103,8 +136,6 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
       setToastMessage('Failed to delete translation — please try again');
     }
   };
-
-  const EXPLANATION_MARKER = '[[EXPLANATION]]';
 
   const handleTranslate = async () => {
     if (!inputText.trim() || isLoading) return;
@@ -144,7 +175,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         fullText += decoder.decode(value, { stream: true });
 
         const markerIdx = fullText.indexOf(EXPLANATION_MARKER);
-        const displayText = markerIdx >= 0 ? fullText.slice(0, markerIdx) : fullText;
+        const displayText = markerIdx >= 0 ? fullText.slice(0, markerIdx) : stripPartialMarker(fullText);
         updateStreamingMessage(streamingId, displayText.trimEnd());
       }
       // Flush any buffered multi-byte UTF-8 sequences from the decoder
@@ -209,7 +240,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         const { done, value } = await reader.read();
         if (done) break;
         fullText += decoder.decode(value, { stream: true });
-        updateStreamingMessage(streamingId, fullText);
+        updateStreamingMessage(streamingId, stripPartialMarker(fullText).trimEnd());
       }
       fullText += decoder.decode();
 
@@ -473,9 +504,9 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
               </div>
             </div>
           ) : (
-            groupedMessages.map((group, idx) => (
+            groupedMessages.map((group) => (
               <DateGroup
-                key={idx}
+                key={group.title}
                 id={`group-${group.title.toLowerCase().replace(/\s+/g, '-')}`}
                 title={group.title}
                 messages={group.messages}
@@ -751,7 +782,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
       <Toast
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
-        onHide={() => setToastMessage(null)}
+        onHide={hideToast}
         icon="⚠️"
       />
 
