@@ -270,7 +270,9 @@ export function useCloudStorage() {
     const response = await fetch(`/api/translations?id=${dbId}`, { method: 'DELETE' });
     const result = await response.json();
     if (!result.success) throw new Error(result.error || 'Failed to delete translation');
-    setMessages(prev => prev.filter(m => !m.id.startsWith(dbId)));
+    // Match "<dbId>_" exactly — a bare startsWith(dbId) would also catch ids
+    // that merely share a prefix (e.g. "1" matching "10_user").
+    setMessages(prev => prev.filter(m => !m.id.startsWith(`${dbId}_`)));
   }, [isSignedIn]);
 
   return {
