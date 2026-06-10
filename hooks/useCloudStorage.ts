@@ -156,39 +156,6 @@ export function useCloudStorage() {
     return newMessage;
   }, []);
 
-  const addAssistantMessage = useCallback(async (text: string, tone: string, explanation: string, userText: string) => {
-    if (!isSignedIn) {
-      setMessages(prev => [...prev, {
-        id: `guest_${Date.now()}_assistant`,
-        role: 'assistant',
-        text,
-        tone,
-        explanation,
-        timestamp: Date.now() + 1,
-      }]);
-      return;
-    }
-
-    const response = await fetch('/api/translations', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ userText, assistantText: text, tone, explanation }),
-    });
-    const result = await response.json();
-    if (result.success) {
-      setMessages(prev => {
-        const withoutTemp = prev.filter(m =>
-          !(m.role === 'user' && m.text === userText && m.tone === tone && m.id.startsWith('temp_'))
-        );
-        return [
-          ...withoutTemp,
-          { id: `${result.data.id}_user`, role: 'user', text: userText, tone, timestamp: Date.now() },
-          { id: `${result.data.id}_assistant`, role: 'assistant', text, tone, explanation, timestamp: Date.now() + 1 },
-        ];
-      });
-    }
-  }, [isSignedIn]);
-
   const finalizeStreamingMessage = useCallback(async (
     streamingId: string,
     text: string,
@@ -295,7 +262,6 @@ export function useCloudStorage() {
     groupedMessages,
     isLoading,
     addUserMessage,
-    addAssistantMessage,
     addStreamingMessage,
     updateStreamingMessage,
     removeStreamingMessage,
