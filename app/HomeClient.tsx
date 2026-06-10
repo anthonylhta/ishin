@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
 import { useCloudStorage } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
@@ -103,6 +103,10 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     setSelectedTone(id);
     localStorage.setItem('selectedTone', id);
   };
+
+  // Stable identity — Toast's auto-hide effect depends on onHide, so an inline
+  // closure would reset the timer on every HomeClient re-render (e.g. typing).
+  const hideToast = useCallback(() => setToastMessage(null), []);
 
   const handlePaste = async () => {
     try {
@@ -778,7 +782,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
       <Toast
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
-        onHide={() => setToastMessage(null)}
+        onHide={hideToast}
         icon="⚠️"
       />
 

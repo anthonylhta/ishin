@@ -12,9 +12,10 @@ interface ToastProps {
 export default function Toast({ message, isVisible, onHide, icon = '✓' }: ToastProps) {
   useEffect(() => {
     if (isVisible) {
+      // Every current toast is an error message — give it time to be read.
       const timer = setTimeout(() => {
         onHide();
-      }, 2000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [isVisible, onHide]);
