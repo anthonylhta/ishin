@@ -29,13 +29,22 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
   const [isMobile, setIsMobile] = useState(initialIsMobile);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
-  const { groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
+  const { messages, groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Follow new and streaming messages only. Scrolling on every groupedMessages
+  // change yanked the viewport to the bottom on collapse toggles and on
+  // deleting an old message; depending on messages and gating on growth or an
+  // active stream scrolls exactly when new content appears at the bottom.
+  const prevMessageCount = useRef(0);
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [groupedMessages]);
+    const grew = messages.length > prevMessageCount.current;
+    prevMessageCount.current = messages.length;
+    if (grew || messages[messages.length - 1]?.isStreaming) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // Restore saved tone after hydration — must be useEffect, not lazy useState, to avoid SSR mismatch.
   useEffect(() => {
