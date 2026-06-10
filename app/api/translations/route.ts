@@ -14,6 +14,9 @@ const VALID_TONES = ['casual', 'polite', 'formal', 'blunt'] as const;
 const MAX_USER_TEXT = 2000;
 const MAX_ASSISTANT_TEXT = 4000;
 const MAX_EXPLANATION = 1000;
+// History is loaded in full on every sign-in; cap it so payload and render
+// cost stay bounded as the table grows. 200 records ≈ months of real use.
+const MAX_HISTORY_RECORDS = 200;
 
 // GET - Load all translations for the logged-in user
 export async function GET() {
@@ -23,14 +26,17 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Newest first so the limit keeps the most recent records, then reversed
+    // back to chronological order for the client.
     const { data, error } = await supabase
       .from('translations')
       .select('*')
       .eq('user_id', userId)
-      .order('created_at', { ascending: true });
+      .order('created_at', { ascending: false })
+      .limit(MAX_HISTORY_RECORDS);
 
     if (error) throw error;
-    return NextResponse.json({ success: true, data });
+    return NextResponse.json({ success: true, data: (data ?? []).reverse() });
   } catch (error) {
     console.error('Load translations error:', error);
     return NextResponse.json({ error: 'Failed to load translations' }, { status: 500 });

@@ -51,7 +51,9 @@ export async function POST(request: NextRequest) {
 
     const stream = client.messages.stream({
       model: 'claude-haiku-4-5-20251001',
-      max_tokens: 1024,
+      // A maxed-out 2000-char input can exceed 1024 output tokens (JP↔EN both
+      // directions); only generated tokens are billed, so headroom is free.
+      max_tokens: 2048,
       temperature: 0.5,
       system: buildSystemPrompt(selectedTone, toEnglish),
       messages: [

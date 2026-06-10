@@ -1,14 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { memo, useState } from 'react';
 import { ChatMessage as ChatMessageType } from '@/hooks/useCloudStorage';
 
 interface Props {
   message: ChatMessageType;
-  onDelete?: () => void;
+  onDelete?: (id: string) => void;
 }
 
-export default function ChatMessage({ message, onDelete }: Props) {
+// Memoized: during streaming every token rebuilds the messages array, but only
+// the live bubble's message object changes identity — the rest of the history
+// must not re-render per token. onDelete takes the id so parents can pass one
+// stable callback instead of a per-message closure (which would defeat memo).
+function ChatMessage({ message, onDelete }: Props) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
   const isCheck = message.kind === 'check';
@@ -169,7 +173,7 @@ export default function ChatMessage({ message, onDelete }: Props) {
             )}
             {onDelete && (
               <button
-                onClick={onDelete}
+                onClick={() => onDelete(message.id)}
                 style={{
                   background: 'none',
                   border: 'none',
@@ -189,3 +193,5 @@ export default function ChatMessage({ message, onDelete }: Props) {
     </div>
   );
 }
+
+export default memo(ChatMessage);

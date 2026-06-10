@@ -65,7 +65,7 @@ export default function DateGroup({ id, title, messages, collapsed, onToggle, on
             <ChatMessage
               key={message.id}
               message={message}
-              onDelete={() => onDeleteMessage(message.id)}
+              onDelete={onDeleteMessage}
             />
           ))}
         </div>
