@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
 
 export interface ChatMessage {
@@ -126,13 +126,19 @@ export function useCloudStorage() {
   }, [isSignedIn]);
 
   // Auto-load when user signs in; sync user row in parallel.
+  // Only a real sign-out clears messages: Clerk resolves isSignedIn
+  // undefined → false on every guest page load, and clearing on that
+  // transition wiped a message sent before Clerk finished initialising.
+  const wasSignedIn = useRef(false);
   useEffect(() => {
     if (isSignedIn) {
+      wasSignedIn.current = true;
       fetch('/api/user/sync', { method: 'POST' }).catch(console.error);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadMessages();
     } else {
-      setMessages([]);
+      if (wasSignedIn.current) setMessages([]);
+      wasSignedIn.current = false;
       setIsLoading(false);
     }
   }, [isSignedIn, loadMessages]);
