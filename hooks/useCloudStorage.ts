@@ -197,22 +197,23 @@ export function useCloudStorage() {
         body: JSON.stringify({ userText, assistantText: text, tone, explanation, message_type: kind }),
       });
       const result = await response.json();
-      if (result.success) {
-        setMessages(prev => {
-          const tempUser = prev.find(
-            m => m.role === 'user' && m.text === userText && m.tone === tone && m.id.startsWith('temp_')
-          );
-          const userTimestamp = tempUser?.timestamp ?? Date.now();
-          const withoutTempUser = prev.filter(m => m !== tempUser);
-          const withRealAssistantId = withoutTempUser.map(m =>
-            m.id === streamingId ? { ...m, id: `${result.data.id}_assistant` } : m
-          );
-          return [
-            ...withRealAssistantId,
-            { id: `${result.data.id}_user`, role: 'user' as const, text: userText, tone, timestamp: userTimestamp },
-          ];
-        });
-      }
+      // A 4xx/5xx response resolves the fetch — without this throw the message
+      // would stay on screen looking saved when it never persisted.
+      if (!result.success) throw new Error(result.error || 'Failed to save translation');
+      setMessages(prev => {
+        const tempUser = prev.find(
+          m => m.role === 'user' && m.text === userText && m.tone === tone && m.id.startsWith('temp_')
+        );
+        const userTimestamp = tempUser?.timestamp ?? Date.now();
+        const withoutTempUser = prev.filter(m => m !== tempUser);
+        const withRealAssistantId = withoutTempUser.map(m =>
+          m.id === streamingId ? { ...m, id: `${result.data.id}_assistant` } : m
+        );
+        return [
+          ...withRealAssistantId,
+          { id: `${result.data.id}_user`, role: 'user' as const, text: userText, tone, timestamp: userTimestamp },
+        ];
+      });
     } catch (err) {
       console.error('Failed to save translation:', err);
       // Remove the ghost message — it was never persisted and can't be deleted later
