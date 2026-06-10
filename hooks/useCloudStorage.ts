@@ -14,6 +14,17 @@ export interface ChatMessage {
   isStreaming?: boolean;
 }
 
+// Read the collapsed-state map from localStorage, treating a missing or
+// corrupted value as "nothing collapsed" rather than letting JSON.parse throw.
+// Client-only — callers must guard against SSR.
+function readCollapsedGroups(): Record<string, boolean> {
+  try {
+    return JSON.parse(localStorage.getItem('collapsed_groups') || '{}');
+  } catch {
+    return {};
+  }
+}
+
 export function groupMessagesByDate(messages: ChatMessage[]) {
   const groups: { title: string; messages: ChatMessage[]; collapsed?: boolean }[] = [];
   const today = new Date();
@@ -55,10 +66,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
   if (currentGroup) groups.push(currentGroup);
 
   // Guard localStorage access for SSR
-  const collapsedStates: Record<string, boolean> =
-    typeof window !== 'undefined'
-      ? JSON.parse(localStorage.getItem('collapsed_groups') || '{}')
-      : {};
+  const collapsedStates = typeof window !== 'undefined' ? readCollapsedGroups() : {};
 
   return groups.map(group => ({
     ...group,
@@ -245,7 +253,7 @@ export function useCloudStorage() {
   }, []);
 
   const toggleGroup = useCallback((groupTitle: string) => {
-    const collapsedStates = JSON.parse(localStorage.getItem('collapsed_groups') || '{}');
+    const collapsedStates = readCollapsedGroups();
     collapsedStates[groupTitle] = !collapsedStates[groupTitle];
     localStorage.setItem('collapsed_groups', JSON.stringify(collapsedStates));
     setCollapsedVersion(v => v + 1);
