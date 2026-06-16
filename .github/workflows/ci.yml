@@ -20,8 +20,12 @@ jobs:
 
       - run: npm ci
 
+      # Gate on production dependencies only. Dev/build tooling (esbuild, vite,
+      # vitest, tsx) doesn't ship to the deployed runtime, and high-severity
+      # advisories there (e.g. dev-server-on-Windows issues) shouldn't block
+      # merges. Production deps are still audited at high severity.
       - name: Audit
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=high --omit=dev
 
       - name: Type check
         run: npx tsc --noEmit
