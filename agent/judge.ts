@@ -58,8 +58,11 @@ export function parseMinerVerdict(raw: string): MinerVerdict {
     throw new Error('Miner judge JSON was not an object');
   }
   const v = parsed as Partial<MinerVerdict>;
+  // Tolerate a numeric score that arrives as a string ("3"). Coercing a stray
+  // string straight to 0 would flag a perfectly natural translation as a failure.
+  const score = typeof v.score === 'number' ? v.score : Number(v.score);
   return {
-    score: typeof v.score === 'number' ? v.score : 0,
+    score: Number.isFinite(score) ? score : 0,
     natural: v.natural === true,
     issues: Array.isArray(v.issues) ? v.issues.map(String) : [],
     watch_for: typeof v.watch_for === 'string' ? v.watch_for : '',

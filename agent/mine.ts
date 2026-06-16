@@ -151,8 +151,8 @@ async function main(): Promise<void> {
     console.log(`${flagged ? '⚠' : '✓'} score ${v.score}  ${input.slice(0, 50)}`);
     if (!flagged) continue;
 
-    // Don't propose two cases for the same source text in one run.
-    if (known.has(input)) continue;
+    // Record the source so a later repeat of the same text isn't proposed twice
+    // (the top-of-loop guard then skips it).
     known.add(input);
 
     const stampId = row.created_at.slice(0, 10).replace(/-/g, '');
