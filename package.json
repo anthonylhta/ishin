@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "eval": "tsx evals/run.ts",
+    "mine": "tsx agent/mine.ts",
     "prepare": "git config core.hooksPath .githooks"
   },
   "dependencies": {

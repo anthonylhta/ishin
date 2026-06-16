@@ -1,0 +1,50 @@
+name: Failure-miner
+
+# Autonomous quality agent: reviews recent production translations with Claude and
+# proposes new golden-set regression cases for the likely failures. Scheduled +
+# on-demand — NOT part of per-commit CI (it calls the paid API and is
+# non-deterministic, same reasoning as the eval harness).
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # 08:00 UTC every Monday
+  workflow_dispatch: # run on demand from the Actions tab
+    inputs:
+      limit:
+        description: "How many recent translations to review"
+        required: false
+        default: "50"
+      threshold:
+        description: "Flag translations scoring at or below this (1-5)"
+        required: false
+        default: "3"
+
+jobs:
+  mine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Mine recent translations for new eval cases
+        run: npm run mine
+        env:
+          MINE_LIMIT: ${{ github.event.inputs.limit || '50' }}
+          MINE_THRESHOLD: ${{ github.event.inputs.threshold || '3' }}
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Upload proposed cases
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: golden-case-proposals
+          path: agent/proposals/
+          if-no-files-found: ignore
