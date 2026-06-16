@@ -1,78 +1,136 @@
-/* Refined dark palette. The live UI is inline-styled; this file holds only the
-   design tokens, the page background, and the few class/element styles that are
-   actually referenced. (An earlier non-chat layout left ~400 lines of unused
-   selectors here — removed in the speed pass.) */
+@import 'tailwindcss';
+
+/* ── Tone Translator — refined dark theme ──────────────────────────────────
+   Deep, warm near-black canvas with a single deep-red brand color and a muted
+   gold accent. Japanese text uses the Mincho serif; UI uses DM Sans.
+   Tokens are mapped to Tailwind utilities below via @theme inline.            */
+
 :root {
-  --background: #0D0D0B;
-  --surface: #1A1917;
-  --surface-elevated: #24221F;
-  --border: rgba(201, 168, 76, 0.15);
-  --border-gold: #C9A84C;
-  --accent-red: #C0392B;
-  --accent-red-dark: #A83226;
-  --accent-red-glow: rgba(192, 57, 43, 0.3);
-  --accent-gold: #C9A84C;
-  --text-primary: #F0EDE8;
-  --text-secondary: #8A8580;
-  --text-tertiary: #5A5652;
-  /* Body copy — brighter than --text-secondary for readable explanations/check
-     bodies on small, dim phone screens, without the harshness of --text-primary. */
-  --text-body: #C2BDB6;
-  --font-sans: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --radius: 0.875rem;
+
+  /* Core surfaces — warm charcoal, layered for subtle depth */
+  --background: #0c0b0a;
+  --foreground: #f1eee8;
+
+  --card: #161413;
+  --card-foreground: #f1eee8;
+
+  --popover: #1b1917;
+  --popover-foreground: #f1eee8;
+
+  /* Brand red */
+  --primary: #c0392b;
+  --primary-foreground: #fdf6f4;
+
+  /* Neutral fill for inactive controls */
+  --secondary: #201d1b;
+  --secondary-foreground: #d8d3cb;
+
+  --muted: #1a1816;
+  --muted-foreground: #8c857c;
+
+  /* Gold accent */
+  --accent: #cba74e;
+  --accent-foreground: #1a1614;
+
+  --destructive: #c0392b;
+  --destructive-foreground: #fdf6f4;
+
+  --border: rgba(203, 167, 78, 0.14);
+  --input: rgba(203, 167, 78, 0.12);
+  --ring: rgba(192, 57, 43, 0.55);
+
+  /* Brighter body tone for explanation/check copy on dim screens */
+  --body: #c6c0b7;
+
+  --font-sans: var(--font-dm-sans), system-ui, -apple-system, sans-serif;
+  --font-serif: var(--font-serif), 'Shippori Mincho', serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-body: var(--body);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 * {
+  box-sizing: border-box;
+}
+
+html,
+body {
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
-  color: var(--text-primary);
+  color: var(--foreground);
   font-family: var(--font-sans);
   position: relative;
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Ink-wash background: fine noise texture + a slow-drifting red radial glow. */
+/* Ambient ink-wash: fine grain + a slow-drifting red glow anchored top-center */
 body::before {
   content: '';
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
-  background-repeat: repeat;
-  opacity: 0.4;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 800 800'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.7' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+  opacity: 0.5;
   pointer-events: none;
   z-index: 0;
 }
 
 @keyframes inkDrift {
   0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(1%, 0.5%) scale(1.02); }
+  50% { transform: translate(2%, 1%) scale(1.04); }
 }
 
 body::after {
   content: '';
   position: fixed;
-  top: -20%;
-  left: -20%;
-  width: 140%;
-  height: 140%;
-  background: radial-gradient(circle at 30% 40%, rgba(192, 57, 43, 0.03) 0%, transparent 70%);
+  top: -30%;
+  left: -10%;
+  width: 120%;
+  height: 90%;
+  background: radial-gradient(ellipse at 50% 0%, rgba(192, 57, 43, 0.07) 0%, transparent 60%);
   pointer-events: none;
-  animation: inkDrift 20s ease-in-out infinite;
+  animation: inkDrift 22s ease-in-out infinite;
   z-index: 0;
 }
 
 textarea::placeholder {
-  color: var(--text-tertiary);
+  color: var(--muted-foreground);
 }
 
-/* Hide the scrollbar on the horizontal tone-pill strip in the composer. */
+/* Hide scrollbar on the horizontal tone-pill strip */
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
@@ -81,54 +139,58 @@ textarea::placeholder {
   display: none;
 }
 
-/* The date-jump nav docks outside the right edge of the 800px content column,
-   so it's off-screen on phones/tablets. Only show it when there's room. */
-@media (max-width: 1000px) {
+/* Slim themed scrollbar for the chat thread */
+.thread-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 167, 78, 0.2) transparent;
+}
+.thread-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.thread-scroll::-webkit-scrollbar-thumb {
+  background: rgba(203, 167, 78, 0.18);
+  border-radius: 100px;
+}
+
+/* The date-jump rail docks outside the content column; hide when there's no room */
+@media (max-width: 1080px) {
   .date-jump-nav {
     display: none;
   }
 }
 
-/* Toast + ConfirmModal entrance animations (referenced from inline styles). */
+/* ── Animations ─────────────────────────────────────────────────────────── */
 @keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
-
 @keyframes fadeIn {
   from { opacity: 0; }
-  to { opacity: 1; }
+  to   { opacity: 1; }
 }
-
 @keyframes modalSlideUp {
-  from {
-    opacity: 0;
-    transform: translate(-50%, -40%);
-  }
-  to {
-    opacity: 1;
-    transform: translate(-50%, -50%);
-  }
+  from { opacity: 0; transform: translate(-50%, -42%); }
+  to   { opacity: 1; transform: translate(-50%, -50%); }
+}
+@keyframes bubbleIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-bubble-in {
+  animation: bubbleIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* Streaming cursor (used by ChatMessage during generation). */
 @keyframes blink {
   0%, 100% { opacity: 1; }
   50% { opacity: 0; }
 }
-
 .streaming-cursor {
   display: inline-block;
   width: 2px;
-  height: 1.1em;
-  background: var(--text-primary);
-  margin-left: 2px;
+  height: 1.05em;
+  background: var(--accent);
+  margin-left: 3px;
   vertical-align: text-bottom;
-  animation: blink 0.8s ease-in-out infinite;
+  border-radius: 2px;
+  animation: blink 0.85s ease-in-out infinite;
 }

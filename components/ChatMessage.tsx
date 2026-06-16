@@ -1,17 +1,14 @@
 'use client';
 
 import { memo, useState } from 'react';
-import { ChatMessage as ChatMessageType } from '@/hooks/useCloudStorage';
+import { Check, Copy, Lightbulb, X } from 'lucide-react';
+import type { ChatMessage as ChatMessageType } from '@/lib/mock';
 
 interface Props {
   message: ChatMessageType;
   onDelete?: (id: string) => void;
 }
 
-// Memoized: during streaming every token rebuilds the messages array, but only
-// the live bubble's message object changes identity — the rest of the history
-// must not re-render per token. onDelete takes the id so parents can pass one
-// stable callback instead of a per-message closure (which would defeat memo).
 function ChatMessage({ message, onDelete }: Props) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
@@ -21,15 +18,14 @@ function ChatMessage({ message, onDelete }: Props) {
     minute: '2-digit',
   });
 
-  // Split check results into verdict line + body — applied during and after streaming
-  // so formatting is visible from the first character, with no layout snap on completion.
+  // Check results split into a verdict line + body.
   let verdictLine = '';
   let checkBody = '';
   if (isCheck && !isUser) {
-    const nlIdx = message.text.indexOf('\n');
-    if (nlIdx > 0) {
-      verdictLine = message.text.slice(0, nlIdx).trim();
-      checkBody = message.text.slice(nlIdx + 1).trim();
+    const nl = message.text.indexOf('\n');
+    if (nl > 0) {
+      verdictLine = message.text.slice(0, nl).trim();
+      checkBody = message.text.slice(nl + 1).trim();
     } else {
       verdictLine = message.text.trim();
     }
@@ -42,60 +38,45 @@ function ChatMessage({ message, onDelete }: Props) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Clipboard can be unavailable (permissions, unfocused document) —
-      // leave the button as "Copy" instead of falsely confirming.
+      /* clipboard may be unavailable */
     }
   };
 
+  const toneLabel = message.tone
+    ? isCheck
+      ? `確 CHECK · ${message.tone.toUpperCase()}`
+      : message.tone.toUpperCase()
+    : '';
+
   return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: isUser ? 'flex-end' : 'flex-start',
-        marginBottom: '16px',
-        width: '100%',
-      }}
-    >
+    <div className={`animate-bubble-in flex w-full ${isUser ? 'justify-end' : 'justify-start'}`}>
       <div
-        style={{
-          maxWidth: '80%',
-          background: isUser ? 'var(--accent-red)' : 'var(--surface-elevated)',
-          border: isUser ? 'none' : '1px solid var(--border)',
-          borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-          padding: '12px 16px',
-        }}
+        className={[
+          'group relative max-w-[85%] sm:max-w-[80%] px-4 py-3 shadow-sm',
+          isUser
+            ? 'rounded-[20px_20px_6px_20px] bg-primary text-primary-foreground'
+            : 'rounded-[20px_20px_20px_6px] border border-border bg-card text-card-foreground',
+        ].join(' ')}
       >
-        {/* Header with tone/kind and time */}
+        {/* Meta row */}
         <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '6px',
-            gap: '12px',
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
-          }}
+          className={`mb-1.5 flex items-center justify-between gap-3 text-[10px] font-semibold tracking-wider ${
+            isUser ? 'text-primary-foreground/70' : 'text-muted-foreground'
+          }`}
         >
-          {message.tone && (
-            <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>
-              {isCheck ? `確 ${message.tone}` : message.tone}
-            </span>
-          )}
-          <span>{timestamp}</span>
+          {toneLabel && <span>{toneLabel}</span>}
+          <span className="font-medium tabular-nums">{timestamp}</span>
         </div>
 
-        {/* Message text */}
+        {/* Body */}
         {isCheck && !isUser ? (
           <>
             {verdictLine ? (
-              <div style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                fontFamily: 'var(--font-sans)',
-                color: isNatural ? 'var(--accent-gold)' : 'var(--text-primary)',
-                marginBottom: checkBody ? '8px' : 0,
-              }}>
+              <div
+                className={`text-[15px] font-semibold leading-snug ${
+                  isNatural ? 'text-accent' : 'text-foreground'
+                } ${checkBody ? 'mb-2' : ''}`}
+              >
                 {verdictLine}
                 {message.isStreaming && !checkBody && <span className="streaming-cursor" />}
               </div>
@@ -103,7 +84,7 @@ function ChatMessage({ message, onDelete }: Props) {
               <span className="streaming-cursor" />
             ) : null}
             {checkBody && (
-              <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-body)', wordBreak: 'break-word' }}>
+              <div className="text-[13px] leading-relaxed text-body break-words">
                 {checkBody}
                 {message.isStreaming && <span className="streaming-cursor" />}
               </div>
@@ -111,80 +92,63 @@ function ChatMessage({ message, onDelete }: Props) {
           </>
         ) : (
           <div
-            style={{
-              fontSize: isUser ? '14px' : '18px',
-              fontFamily: isUser ? 'var(--font-sans)' : 'var(--font-serif)',
-              lineHeight: 1.5,
-              color: 'var(--text-primary)',
-              wordBreak: 'break-word',
-            }}
+            className={`break-words ${
+              isUser
+                ? 'font-sans text-[14px] leading-relaxed'
+                : 'font-serif text-[19px] leading-snug text-foreground'
+            }`}
           >
             {message.text}
-            {message.isStreaming && (
-              <span className="streaming-cursor" />
-            )}
+            {message.isStreaming && <span className="streaming-cursor" />}
           </div>
         )}
 
-        {/* Explanation for assistant */}
+        {/* Why / explanation */}
         {!isUser && message.explanation && (
-          <div
-            style={{
-              fontSize: '12px',
-              lineHeight: 1.5,
-              color: 'var(--text-body)',
-              marginTop: '10px',
-              paddingTop: '10px',
-              borderTop: '1px solid var(--border)',
-              display: 'flex',
-              gap: '6px',
-            }}
-          >
-            <span>💡</span>
-            <span>{message.explanation}</span>
+          <div className="mt-3 flex gap-2 border-t border-border pt-3 text-[12px] leading-relaxed text-body">
+            <Lightbulb className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
+            <span>
+              <span className="font-semibold text-accent">Why </span>
+              {message.explanation}
+            </span>
           </div>
         )}
 
-        {/* Action buttons — hidden while streaming */}
+        {/* Actions */}
         {!message.isStreaming && (
           <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '8px',
-              marginTop: '8px',
-            }}
+            className={`mt-2 flex items-center justify-end gap-1 ${
+              isUser ? '' : 'opacity-70 transition-opacity group-hover:opacity-100'
+            }`}
           >
             {!isUser && (
               <button
                 onClick={handleCopy}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: copied ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                }}
+                className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-[11px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                aria-label="Copy result"
               >
-                {copied ? '✓ Copied' : 'Copy'}
+                {copied ? (
+                  <>
+                    <Check className="size-3 text-accent" /> Copied
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3" /> Copy
+                  </>
+                )}
               </button>
             )}
             {onDelete && (
               <button
                 onClick={() => onDelete(message.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-tertiary)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                }}
+                className={`inline-flex items-center justify-center rounded-md p-1 transition-colors ${
+                  isUser
+                    ? 'text-primary-foreground/60 hover:bg-primary-foreground/15 hover:text-primary-foreground'
+                    : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
+                }`}
+                aria-label="Delete message"
               >
-                ✕
+                <X className="size-3.5" />
               </button>
             )}
           </div>
