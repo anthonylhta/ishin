@@ -119,5 +119,40 @@
     "input": "i have 1k in cash, what should i spend it on?",
     "tone": "casual",
     "watch_for": "1k = $1000 (English speaker, no explicit currency → dollars). Must render as 1000ドル or keep dollars — 1000円 wrongly defaults to the target-language currency and changes the amount ~150×."
+  },
+  {
+    "id": "particle-ga-before-itsumo",
+    "input": "the world cup is in america so the games are always early in the morning for us lol",
+    "tone": "casual",
+    "watch_for": "試合 needs a particle before いつも (試合がいつも, not bare 試合いつも), and the causal connector should be casual (だから / 〜んで / 〜し), not the stiff written-style あるから.",
+    "regression_of": "mined from production 2026-06-15"
+  },
+  {
+    "id": "jp-en-zekkyou-stop",
+    "input": "なんか1番の絶叫はstopしてた",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 絶叫 here is a thrill/scream ride and stop means it was closed / out of service — render as natural English (e.g. 'the biggest thrill ride was closed'). Don't translate stop as 'on mute' (wrong metaphor) or hedge with 'something like'.",
+    "regression_of": "mined from production 2026-06-12"
+  },
+  {
+    "id": "loanword-korea-kankoku",
+    "input": "ive flown to korea from japan before lol",
+    "tone": "casual",
+    "watch_for": "Korea must be 韓国, never the katakana loanword コリア, in natural Japanese.",
+    "regression_of": "mined from production 2026-06-12"
+  },
+  {
+    "id": "register-feminine-dawa",
+    "input": "gambling is enough for me",
+    "tone": "casual",
+    "watch_for": "Gender-neutral casual ending (〜で十分だよ / 〜だな), not the feminine 〜だわ. Natural casual, not stiff.",
+    "regression_of": "mined from production 2026-06-12"
+  },
+  {
+    "id": "currency-yen-not-grand",
+    "input": "11〜21万くらい split between 2 people isnt expensive lol",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN (mixed input). 万 = ten-thousands of yen, so 11〜21万 = 110,000–210,000 yen — keep it as yen (e.g. 110k–210k yen), never 'grand', which implies USD/GBP and changes the amount. Same currency-fidelity class as ADR 0034.",
+    "regression_of": "mined from production 2026-06-12, related ADR 0034"
   }
 ]
