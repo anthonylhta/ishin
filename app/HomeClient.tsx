@@ -404,8 +404,11 @@ export default function HomeClient() {
         </div>
       )}
 
-      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
-        <div style={{ maxWidth: '680px', margin: '0 auto', paddingTop: '16px' }}>
+      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px', scrollbarGutter: 'stable both-edges' }}>
+        {/* The message content is inset 24px inside the column so it sits
+            CONTAINED within the composer card's width (which spans the full
+            column) — the conversation tucks inside the composer, not flush to it. */}
+        <div style={{ maxWidth: '680px', margin: '0 auto', padding: '16px 24px 0' }}>
           {isLoadingHistory ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               Loading your history...
@@ -483,12 +486,13 @@ export default function HomeClient() {
         </div>
       </div>
 
+      {/* No hard divider/bar — the composer floats as a contained card with
+          whitespace around it (Claude-style), on the page background. */}
       <div style={{
         flexShrink: 0,
-        borderTop: '1px solid var(--border)',
-        background: 'rgba(13, 13, 11, 0.98)',
-        padding: '12px 16px',
-        paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
+        background: 'var(--background)',
+        padding: '6px 16px 0',
+        paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
       }}>
         <div style={{
           maxWidth: '680px',
