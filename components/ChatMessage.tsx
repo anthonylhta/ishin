@@ -8,6 +8,59 @@ interface Props {
   onDelete?: (id: string) => void;
 }
 
+// Bare inline icons (Lucide-style, currentColor) for the message action row.
+const ICON = {
+  width: 15,
+  height: 15,
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
+const CopyIcon = () => (
+  <svg {...ICON}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
+);
+const CheckIcon = () => (
+  <svg {...ICON}><path d="M20 6 9 17l-5-5" /></svg>
+);
+const TrashIcon = () => (
+  <svg {...ICON}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" /></svg>
+);
+
+// A bare icon button for the action row — subtle by default (works on touch,
+// no hover required), brightening on hover; gold when "active" (copied).
+function IconButton({ onClick, label, active, children }: {
+  onClick: () => void;
+  label: string;
+  active?: boolean;
+  children: React.ReactNode;
+}) {
+  const [hover, setHover] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      onMouseEnter={() => setHover(true)}
+      onMouseLeave={() => setHover(false)}
+      style={{
+        background: hover ? 'var(--surface-elevated)' : 'transparent',
+        border: 'none',
+        cursor: 'pointer',
+        padding: '5px',
+        borderRadius: '7px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        color: active ? 'var(--accent-gold)' : hover ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+        transition: 'color 0.15s, background 0.15s',
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
 // Memoized: during streaming every token rebuilds the messages array, but only
 // the live bubble's message object changes identity — the rest of the history
 // must not re-render per token. onDelete takes the id so parents can pass one
@@ -57,8 +110,17 @@ function ChatMessage({ message, onDelete }: Props) {
       }}
     >
       <div
+        className="msg-row"
         style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: isUser ? 'flex-end' : 'flex-start',
           maxWidth: '80%',
+        }}
+      >
+      <div
+        style={{
+          maxWidth: '100%',
           background: isUser ? 'var(--accent-red)' : 'var(--surface-elevated)',
           border: isUser ? 'none' : '1px solid var(--border)',
           borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
@@ -145,50 +207,24 @@ function ChatMessage({ message, onDelete }: Props) {
           </div>
         )}
 
-        {/* Action buttons — hidden while streaming */}
-        {!message.isStreaming && (
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '8px',
-              marginTop: '8px',
-            }}
-          >
-            {!isUser && (
-              <button
-                onClick={handleCopy}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: copied ? 'var(--accent-gold)' : 'var(--text-tertiary)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                }}
-              >
-                {copied ? '✓ Copied' : 'Copy'}
-              </button>
-            )}
-            {onDelete && (
-              <button
-                onClick={() => onDelete(message.id)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: 'var(--text-tertiary)',
-                  cursor: 'pointer',
-                  fontSize: '11px',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        )}
+      </div>
+
+      {/* Action row — a bare icon row BELOW the bubble (not inside it), aligned
+          to the message's side. Hidden while streaming. */}
+      {!message.isStreaming && (!isUser || onDelete) && (
+        <div className="msg-actions" style={{ display: 'flex', gap: '2px', marginTop: '4px', padding: '0 2px' }}>
+          {!isUser && (
+            <IconButton onClick={handleCopy} label={copied ? 'Copied' : 'Copy'} active={copied}>
+              {copied ? <CheckIcon /> : <CopyIcon />}
+            </IconButton>
+          )}
+          {onDelete && (
+            <IconButton onClick={() => onDelete(message.id)} label="Delete">
+              <TrashIcon />
+            </IconButton>
+          )}
+        </div>
+      )}
       </div>
     </div>
   );
