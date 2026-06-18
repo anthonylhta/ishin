@@ -6,7 +6,7 @@ import { useCloudStorage } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
 import Toast from '@/components/Toast';
 import ConfirmModal from '@/components/ConfirmModal';
-import { SendIcon, SpinnerIcon, ClipboardIcon, ToriiMark, WarningIcon } from '@/components/Icons';
+import { SendIcon, SpinnerIcon, ChevronIcon, ToriiMark, WarningIcon } from '@/components/Icons';
 
 const TONES = [
   { id: 'casual', kanji: '普通', label: 'CASUAL' },
@@ -37,7 +37,7 @@ function stripPartialMarker(text: string): string {
   return text;
 }
 
-export default function HomeClient({ initialIsMobile = false }: { initialIsMobile?: boolean }) {
+export default function HomeClient() {
   const { isSignedIn, isLoaded } = useUser();
   const [inputText, setInputText] = useState('');
   const [selectedTone, setSelectedTone] = useState<ToneId>('casual');
@@ -45,15 +45,14 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
   const [checkMode, setCheckMode] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showClearModal, setShowClearModal] = useState(false);
-  // Seeded from a server-side User-Agent guess so the first paint matches the
-  // device (no desktop→mobile flash); the matchMedia effect below refines it.
-  const [isMobile, setIsMobile] = useState(initialIsMobile);
+  const [toneMenuOpen, setToneMenuOpen] = useState(false);
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
   const { messages, groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const toneMenuRef = useRef<HTMLDivElement>(null);
 
   // Follow new and streaming messages only. Scrolling on every groupedMessages
   // change yanked the viewport to the bottom on collapse toggles and on
@@ -77,17 +76,6 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     }
   }, []);
 
-  // Desktop keeps the original composer; mobile gets the redesigned one. The
-  // initial value comes from the server-side UA guess; matchMedia refines it on
-  // the client and keeps it correct across resizes / orientation changes.
-  useEffect(() => {
-    const mq = window.matchMedia('(max-width: 640px)');
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener('change', update);
-    return () => mq.removeEventListener('change', update);
-  }, []);
-
   // Auto-grow the composer textarea with content, capped, and only show a
   // scrollbar once the cap is hit (never on an empty/short field). Both layouts
   // use the auto-grow field now — the old desktop fixed 160px box was oversized
@@ -109,7 +97,19 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     if (wasAtBottom && sc) {
       requestAnimationFrame(() => { sc.scrollTop = sc.scrollHeight; });
     }
-  }, [inputText, isMobile]);
+  }, [inputText]);
+
+  // Close the tone dropdown on an outside click.
+  useEffect(() => {
+    if (!toneMenuOpen) return;
+    const onDown = (e: MouseEvent) => {
+      if (toneMenuRef.current && !toneMenuRef.current.contains(e.target as Node)) {
+        setToneMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', onDown);
+    return () => document.removeEventListener('mousedown', onDown);
+  }, [toneMenuOpen]);
 
   const selectTone = (id: ToneId) => {
     setSelectedTone(id);
@@ -119,18 +119,6 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
   // Stable identity — Toast's auto-hide effect depends on onHide, so an inline
   // closure would reset the timer on every HomeClient re-render (e.g. typing).
   const hideToast = useCallback(() => setToastMessage(null), []);
-
-  const handlePaste = async () => {
-    try {
-      const text = await navigator.clipboard.readText();
-      if (text) {
-        setInputText(text);
-        inputRef.current?.focus();
-      }
-    } catch {
-      setToastMessage('Clipboard unavailable — paste with the keyboard instead');
-    }
-  };
 
   const handleClearHistory = async () => {
     setShowClearModal(false);
@@ -277,12 +265,6 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
     }
   };
 
-  const scrollToGroup = (title: string) => {
-    document
-      .getElementById(`group-${title.toLowerCase().replace(/\s+/g, '-')}`)
-      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -316,7 +298,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         background: 'rgba(13, 13, 11, 0.95)',
         flexShrink: 0,
       }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div style={{ minWidth: 0 }}>
             <h1 style={{
               fontSize: 'clamp(1.05rem, 4.5vw, 1.25rem)',
@@ -407,53 +389,8 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         </div>
       )}
 
-      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '16px' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {groupedMessages.length > 1 && (
-            <div className="date-jump-nav" style={{ position: 'sticky', top: 8, height: 0, overflow: 'visible', zIndex: 10 }}>
-              <div style={{
-                position: 'absolute',
-                left: '100%',
-                marginLeft: '12px',
-                top: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '6px',
-              }}>
-                {groupedMessages.map((group) => (
-                  <button
-                    key={group.title}
-                    onClick={() => scrollToGroup(group.title)}
-                    style={{
-                      background: 'var(--surface-elevated)',
-                      border: '1px solid var(--border)',
-                      borderLeft: '2px solid var(--accent-red)',
-                      borderRadius: '8px',
-                      padding: '6px 14px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      color: 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      letterSpacing: '0.3px',
-                      whiteSpace: 'nowrap',
-                      textAlign: 'left',
-                      transition: 'background 0.15s, color 0.15s',
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = 'rgba(192, 57, 43, 0.08)';
-                      e.currentTarget.style.color = 'var(--text-primary)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'var(--surface-elevated)';
-                      e.currentTarget.style.color = 'var(--text-secondary)';
-                    }}
-                  >
-                    {group.title}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+      <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
+        <div style={{ maxWidth: '720px', margin: '0 auto', paddingTop: '16px' }}>
           {isLoadingHistory ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               Loading your history...
@@ -467,29 +404,27 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
               <div style={{ fontSize: '12px', marginBottom: '28px' }}>
                 or check whether your Japanese sounds natural
               </div>
-              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginBottom: '14px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
                 <button
                   onClick={() => { setCheckMode(false); selectTone('casual'); setInputText('Are you free tonight?'); inputRef.current?.focus(); }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-red)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', flex: '1 1 200px', maxWidth: '240px', transition: 'all 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'transparent', border: 'none', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', transition: 'background 0.15s' }}
                 >
-                  <div style={{ fontSize: '10px', color: 'var(--accent-red)', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.5px' }}>→ TRANSLATE</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px' }}>&ldquo;Are you free tonight?&rdquo;</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>普通 CASUAL</div>
+                  <span style={{ fontSize: '10px', letterSpacing: '1px', color: 'var(--accent-gold)', fontWeight: 600 }}>TRANSLATE</span>
+                  <span style={{ fontSize: '14px', color: 'var(--text-body)' }}>Are you free tonight?</span>
                 </button>
                 <button
                   onClick={() => { setCheckMode(true); selectTone('casual'); setInputText('会議ずらせる？'); inputRef.current?.focus(); }}
-                  onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent-gold)'; e.currentTarget.style.background = 'var(--surface-elevated)'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.background = 'var(--surface)'; }}
-                  style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', textAlign: 'left', cursor: 'pointer', flex: '1 1 200px', maxWidth: '240px', transition: 'all 0.15s' }}
+                  onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--surface)'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'transparent', border: 'none', borderRadius: '10px', padding: '8px 14px', cursor: 'pointer', transition: 'background 0.15s' }}
                 >
-                  <div style={{ fontSize: '10px', color: 'var(--text-secondary)', fontWeight: 600, marginBottom: '6px', letterSpacing: '0.5px', fontFamily: 'var(--font-serif)' }}>確 CHECK</div>
-                  <div style={{ fontSize: '13px', color: 'var(--text-primary)', marginBottom: '4px', fontFamily: 'var(--font-serif)' }}>会議ずらせる？</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>普通 CASUAL</div>
+                  <span style={{ fontSize: '10px', letterSpacing: '1px', color: 'var(--accent-gold)', fontWeight: 600 }}>CHECK</span>
+                  <span style={{ fontSize: '15px', color: 'var(--text-body)', fontFamily: 'var(--font-serif)' }}>会議ずらせる？</span>
                 </button>
               </div>
-              <div style={{ fontSize: '11px' }}>Click an example to try it</div>
+              <div style={{ fontSize: '11px' }}>tap an example to try it</div>
               <div style={{ marginTop: '32px', fontSize: '11px', color: 'var(--text-tertiary)' }}>
                 Built by Anthony Ta
                 {' · '}
@@ -540,133 +475,124 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         padding: '12px 16px',
         paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
       }}>
-        {isMobile ? (
-        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-          {/* Mode — full-width segmented control (changes the primary action) */}
-          <div style={{
-            display: 'flex',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            padding: '3px',
-            gap: '3px',
-          }}>
-            {([['TRANSLATE', false], ['CHECK', true]] as const).map(([label, mode]) => {
-              const active = checkMode === mode;
-              return (
-                <button
-                  key={label}
-                  onClick={() => setCheckMode(mode)}
-                  style={{
-                    flex: 1,
-                    background: active ? 'var(--accent-red)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '9px',
-                    padding: '9px 0',
-                    fontSize: '12px',
-                    fontWeight: active ? 600 : 500,
-                    letterSpacing: '0.5px',
-                    color: active ? '#fff' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                  }}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+        <div style={{
+          maxWidth: '720px',
+          margin: '0 auto',
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '18px',
+          padding: '12px 14px',
+        }}>
+          <textarea
+            ref={inputRef}
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={checkMode ? 'Check…' : 'Message…'}
+            disabled={isLoading}
+            rows={1}
+            style={{
+              width: '100%',
+              minHeight: '40px',
+              maxHeight: `${MAX_INPUT_HEIGHT}px`,
+              background: 'transparent',
+              border: 'none',
+              padding: '6px 4px',
+              color: 'var(--text-primary)',
+              fontSize: '16px',
+              lineHeight: 1.5,
+              resize: 'none',
+              outline: 'none',
+              overflowY: 'hidden',
+              fontFamily: 'var(--font-sans)',
+            }}
+          />
 
-          {/* Tone pills — horizontal scroll, never wraps into a column */}
-          <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-            {TONES.map((tone) => {
-              const active = selectedTone === tone.id;
-              return (
-                <button
-                  key={tone.id}
-                  onClick={() => selectTone(tone.id)}
-                  style={{
-                    flexShrink: 0,
-                    background: active ? 'var(--accent-red)' : 'var(--surface)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '100px',
-                    padding: '8px 16px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: active ? '#fff' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    letterSpacing: '0.5px',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {tone.kanji} {tone.label}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Input row — auto-grow field + fixed-size paste/send buttons */}
-          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px' }}>
-            <textarea
-              ref={inputRef}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={checkMode ? 'Text to check…' : 'Text to translate…'}
-              disabled={isLoading}
-              rows={1}
-              style={{
-                flex: 1,
-                minHeight: '48px',
-                maxHeight: `${MAX_INPUT_HEIGHT}px`,
-                background: 'var(--surface)',
-                border: '1px solid var(--border)',
-                borderRadius: '24px',
-                padding: '13px 16px',
-                color: 'var(--text-primary)',
-                fontSize: '16px',
-                lineHeight: 1.4,
-                resize: 'none',
-                outline: 'none',
-                overflowY: 'hidden',
-                fontFamily: 'var(--font-sans)',
-              }}
-            />
-            {!inputText.trim() && !isLoading && (
+          {/* Controls bar — tone dropdown · TRANSLATE/CHECK · send */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginTop: '4px' }}>
+            {/* Tone dropdown (opens upward — the composer is at the bottom) */}
+            <div ref={toneMenuRef} style={{ position: 'relative' }}>
               <button
-                onClick={handlePaste}
-                aria-label="Paste from clipboard"
+                onClick={() => setToneMenuOpen((o) => !o)}
                 style={{
-                  flexShrink: 0,
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '50%',
-                  background: 'var(--surface)',
-                  border: '1px solid var(--border)',
-                  color: 'var(--text-secondary)',
-                  fontSize: '17px',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
+                  display: 'flex', alignItems: 'center', gap: '5px',
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'var(--font-sans)',
                 }}
               >
-                <ClipboardIcon size={18} />
+                tone&nbsp;·&nbsp;
+                <b style={{ color: 'var(--text-primary)', fontWeight: 500 }}>
+                  {TONES.find((t) => t.id === selectedTone)?.label.toLowerCase()}
+                </b>
+                <span style={{ display: 'inline-flex', opacity: 0.7, transform: toneMenuOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.15s' }}>
+                  <ChevronIcon size={13} />
+                </span>
               </button>
-            )}
+              {toneMenuOpen && (
+                <div style={{
+                  position: 'absolute', bottom: '100%', left: 0, marginBottom: '10px',
+                  background: 'var(--surface-elevated)', border: '1px solid var(--border)',
+                  borderRadius: '12px', padding: '5px', minWidth: '160px', zIndex: 20,
+                  boxShadow: '0 10px 28px rgba(0,0,0,0.5)',
+                }}>
+                  {TONES.map((tone) => {
+                    const active = selectedTone === tone.id;
+                    return (
+                      <button
+                        key={tone.id}
+                        onClick={() => { selectTone(tone.id); setToneMenuOpen(false); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '9px', width: '100%',
+                          background: active ? 'var(--surface)' : 'transparent',
+                          border: 'none', borderRadius: '8px', padding: '9px 11px',
+                          cursor: 'pointer', textAlign: 'left',
+                          color: active ? 'var(--accent-gold)' : 'var(--text-secondary)',
+                          fontSize: '12px', fontWeight: active ? 600 : 500, letterSpacing: '0.5px',
+                        }}
+                      >
+                        <span style={{ fontFamily: 'var(--font-serif)', fontSize: '14px' }}>{tone.kanji}</span>
+                        {tone.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Mode toggle — quiet text */}
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: '14px' }}>
+              {([['TRANSLATE', false], ['CHECK', true]] as const).map(([label, mode]) => {
+                const active = checkMode === mode;
+                return (
+                  <button
+                    key={label}
+                    onClick={() => setCheckMode(mode)}
+                    style={{
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      fontFamily: 'var(--font-sans)', fontSize: '11px', letterSpacing: '0.5px',
+                      color: active ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                      fontWeight: active ? 600 : 400,
+                    }}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Send — the only red */}
             <button
               onClick={checkMode ? handleCheck : handleTranslate}
               disabled={isLoading || !inputText.trim()}
               aria-label={checkMode ? 'Check' : 'Translate'}
               style={{
                 flexShrink: 0,
-                width: '48px',
-                height: '48px',
+                width: '38px',
+                height: '38px',
                 borderRadius: '50%',
                 background: 'var(--accent-red)',
                 border: 'none',
                 color: '#fff',
-                fontSize: '20px',
-                fontWeight: 600,
                 cursor: 'pointer',
                 opacity: isLoading || !inputText.trim() ? 0.5 : 1,
                 display: 'flex',
@@ -674,142 +600,10 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
                 justifyContent: 'center',
               }}
             >
-              {isLoading ? <SpinnerIcon size={19} /> : <SendIcon size={19} />}
+              {isLoading ? <SpinnerIcon size={18} /> : <SendIcon size={18} />}
             </button>
           </div>
         </div>
-        ) : (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-          {/* Composer card (Claude-style): textarea on top, a controls bar
-              beneath it INSIDE the same bordered surface — the send button lives
-              in that bar now, not beside the input. The card grows with the text
-              but the controls stay pinned to its bottom edge. */}
-          <div style={{
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '20px',
-            padding: '10px 12px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px',
-          }}>
-            <textarea
-              ref={inputRef}
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={checkMode ? 'Enter text to check... (Enter to send)' : 'Enter text... (Enter to send)'}
-              disabled={isLoading}
-              rows={1}
-              style={{
-                minHeight: '40px',
-                maxHeight: `${MAX_INPUT_HEIGHT}px`,
-                background: 'transparent',
-                border: 'none',
-                padding: '6px',
-                color: 'var(--text-primary)',
-                fontSize: '15px',
-                lineHeight: 1.5,
-                resize: 'none',
-                outline: 'none',
-                overflowY: 'hidden',
-                fontFamily: 'var(--font-sans)',
-              }}
-            />
-
-            {/* Controls bar — tone pills (scroll if tight) left, mode + send right */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div className="no-scrollbar" style={{ display: 'flex', gap: '8px', overflowX: 'auto', flex: 1 }}>
-                {TONES.map((tone) => (
-                  <button
-                    key={tone.id}
-                    onClick={() => selectTone(tone.id)}
-                    style={{
-                      flexShrink: 0,
-                      background: selectedTone === tone.id ? 'var(--accent-red)' : 'var(--surface-elevated)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '100px',
-                      padding: '8px 16px',
-                      fontSize: '12px',
-                      fontWeight: 500,
-                      color: selectedTone === tone.id ? 'white' : 'var(--text-secondary)',
-                      cursor: 'pointer',
-                      letterSpacing: '0.5px',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
-                    {tone.kanji} {tone.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{
-                display: 'flex',
-                background: 'var(--surface-elevated)',
-                border: '1px solid var(--border)',
-                borderRadius: '100px',
-                padding: '3px',
-                flexShrink: 0,
-              }}>
-                <button
-                  onClick={() => setCheckMode(false)}
-                  style={{
-                    background: !checkMode ? 'var(--background)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '100px',
-                    padding: '7px 13px',
-                    fontSize: '11px',
-                    fontWeight: !checkMode ? 600 : 400,
-                    color: !checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                    cursor: 'pointer',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  TRANSLATE
-                </button>
-                <button
-                  onClick={() => setCheckMode(true)}
-                  style={{
-                    background: checkMode ? 'var(--background)' : 'transparent',
-                    border: 'none',
-                    borderRadius: '100px',
-                    padding: '7px 13px',
-                    fontSize: '11px',
-                    fontWeight: checkMode ? 600 : 400,
-                    color: checkMode ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                    cursor: 'pointer',
-                    letterSpacing: '0.5px',
-                  }}
-                >
-                  CHECK
-                </button>
-              </div>
-              <button
-                onClick={checkMode ? handleCheck : handleTranslate}
-                disabled={isLoading || !inputText.trim()}
-                aria-label={checkMode ? 'Check' : 'Translate'}
-                style={{
-                  flexShrink: 0,
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '50%',
-                  background: 'var(--accent-red)',
-                  border: 'none',
-                  color: 'white',
-                  fontSize: '19px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  opacity: isLoading || !inputText.trim() ? 0.5 : 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                {isLoading ? <SpinnerIcon size={19} /> : <SendIcon size={19} />}
-              </button>
-            </div>
-          </div>
-        </div>
-        )}
       </div>
 
       <Toast
