@@ -313,7 +313,7 @@ export default function HomeClient() {
         background: 'rgba(13, 13, 11, 0.95)',
         flexShrink: 0,
       }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
           <div style={{ minWidth: 0 }}>
             <h1 style={{
               fontSize: 'clamp(1.05rem, 4.5vw, 1.25rem)',
@@ -405,7 +405,7 @@ export default function HomeClient() {
       )}
 
       <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', padding: '0 16px 16px' }}>
-        <div style={{ maxWidth: '720px', margin: '0 auto', paddingTop: '16px' }}>
+        <div style={{ maxWidth: '680px', margin: '0 auto', paddingTop: '16px' }}>
           {isLoadingHistory ? (
             <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-tertiary)' }}>
               Loading your history...
@@ -491,7 +491,7 @@ export default function HomeClient() {
         paddingBottom: 'calc(12px + env(safe-area-inset-bottom))',
       }}>
         <div style={{
-          maxWidth: '720px',
+          maxWidth: '680px',
           margin: '0 auto',
           background: 'var(--surface)',
           border: '1px solid var(--border)',

@@ -73,7 +73,7 @@ function ChatMessage({ message, onDelete }: Props) {
     return (
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '18px' }}>
         <div style={{
-          maxWidth: '72%',
+          maxWidth: '62%',
           background: 'var(--surface)',
           borderRadius: '16px 16px 5px 16px',
           padding: '11px 16px',
@@ -156,7 +156,7 @@ function ChatMessage({ message, onDelete }: Props) {
       ) : (
         <div style={{
           fontFamily: outJa ? 'var(--font-serif)' : 'var(--font-sans)',
-          fontSize: outJa ? '21px' : '19px',
+          fontSize: outJa ? '22px' : '19px',
           color: 'var(--text-primary)',
           lineHeight: 1.55,
           wordBreak: 'break-word',
