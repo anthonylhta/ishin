@@ -65,11 +65,13 @@ function ChatMessage({ message, onDelete }: Props) {
     }
   };
 
-  // ---- INPUT (user): contained, content-hugging, right-aligned, no red ----
+  // ---- INPUT (user): contained, content-hugging, right-aligned, no red.
+  // No action row of its own — delete lives on the OUTPUT and removes the whole
+  // pair (input + its translation), which also keeps the input↔output gap tight. ----
   if (isUser) {
     const ja = JP_RE.test(message.text);
     return (
-      <div className="msg-row" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginBottom: '18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '18px' }}>
         <div style={{
           maxWidth: '72%',
           background: 'var(--surface)',
@@ -83,11 +85,6 @@ function ChatMessage({ message, onDelete }: Props) {
         }}>
           {message.text}
         </div>
-        {onDelete && (
-          <div className="msg-actions" style={{ display: 'flex', marginTop: '4px' }}>
-            <IconButton onClick={() => onDelete(message.id)} label="Delete"><TrashIcon /></IconButton>
-          </div>
-        )}
       </div>
     );
   }
