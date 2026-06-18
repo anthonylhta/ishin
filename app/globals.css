@@ -132,3 +132,19 @@ textarea::placeholder {
   vertical-align: text-bottom;
   animation: blink 0.8s ease-in-out infinite;
 }
+
+/* Message action row (copy/delete): reveal on hover — but ONLY on pointer
+   devices. On touch (hover: none) there's no hover, so the rule doesn't apply
+   and the buttons stay visible (otherwise they'd be unreachable on a phone).
+   Space is reserved regardless, so the layout never jumps; :focus-within keeps
+   the buttons reachable by keyboard. */
+@media (hover: hover) {
+  .msg-actions {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .msg-row:hover .msg-actions,
+  .msg-row:focus-within .msg-actions {
+    opacity: 1;
+  }
+}
