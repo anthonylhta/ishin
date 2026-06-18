@@ -9,6 +9,10 @@ interface Props {
   onDelete?: (id: string) => void;
 }
 
+// Hiragana, katakana, CJK kanji, half-width katakana — used to pick the serif
+// (for Japanese) vs sans, and to infer translation direction from the output.
+const JP_RE = /[぀-ヿ㐀-鿿ｦ-ﾟ]/;
+
 // A bare icon button for the action row — subtle by default (works on touch,
 // no hover required), brightening on hover; gold when "active" (copied).
 function IconButton({ onClick, label, active, children }: {
@@ -41,33 +45,14 @@ function IconButton({ onClick, label, active, children }: {
   );
 }
 
-// Memoized: during streaming every token rebuilds the messages array, but only
-// the live bubble's message object changes identity — the rest of the history
-// must not re-render per token. onDelete takes the id so parents can pass one
-// stable callback instead of a per-message closure (which would defeat memo).
+// v2 layout: an exchange is an INPUT (the user's text — a small, content-hugging
+// box on the right, no red) followed by the OUTPUT (the translation — open on the
+// canvas, no bubble, the hero). They render as separate messages; the visual
+// pairing comes from the spacing (tight under the input, loose after the output).
 function ChatMessage({ message, onDelete }: Props) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
   const isCheck = message.kind === 'check';
-  const timestamp = new Date(message.timestamp).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-
-  // Split check results into verdict line + body — applied during and after streaming
-  // so formatting is visible from the first character, with no layout snap on completion.
-  let verdictLine = '';
-  let checkBody = '';
-  if (isCheck && !isUser) {
-    const nlIdx = message.text.indexOf('\n');
-    if (nlIdx > 0) {
-      verdictLine = message.text.slice(0, nlIdx).trim();
-      checkBody = message.text.slice(nlIdx + 1).trim();
-    } else {
-      verdictLine = message.text.trim();
-    }
-  }
-  const isNatural = verdictLine.startsWith('✓');
 
   const handleCopy = async () => {
     try {
@@ -76,136 +61,130 @@ function ChatMessage({ message, onDelete }: Props) {
       setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard can be unavailable (permissions, unfocused document) —
-      // leave the button as "Copy" instead of falsely confirming.
+      // leave the icon as "copy" instead of falsely confirming.
     }
   };
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        justifyContent: isUser ? 'flex-end' : 'flex-start',
-        marginBottom: '16px',
-        width: '100%',
-      }}
-    >
-      <div
-        className="msg-row"
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: isUser ? 'flex-end' : 'flex-start',
-          maxWidth: '80%',
-        }}
-      >
-      <div
-        style={{
-          maxWidth: '100%',
-          background: isUser ? 'var(--accent-red)' : 'var(--surface-elevated)',
-          border: isUser ? 'none' : '1px solid var(--border)',
-          borderRadius: isUser ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-          padding: '12px 16px',
-        }}
-      >
-        {/* Header with tone/kind and time */}
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            marginBottom: '6px',
-            gap: '12px',
-            fontSize: '11px',
-            color: 'var(--text-secondary)',
-          }}
-        >
-          {message.tone && (
-            <span style={{ textTransform: 'uppercase', fontWeight: 600 }}>
-              {isCheck ? `確 ${message.tone}` : message.tone}
-            </span>
-          )}
-          <span>{timestamp}</span>
+  // ---- INPUT (user): contained, content-hugging, right-aligned, no red.
+  // No action row of its own — delete lives on the OUTPUT and removes the whole
+  // pair (input + its translation), which also keeps the input↔output gap tight. ----
+  if (isUser) {
+    const ja = JP_RE.test(message.text);
+    return (
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '18px' }}>
+        <div style={{
+          maxWidth: '62%',
+          background: 'var(--surface)',
+          borderRadius: '16px 16px 5px 16px',
+          padding: '11px 16px',
+          color: 'var(--text-body)',
+          fontSize: ja ? '16px' : '14px',
+          fontFamily: ja ? 'var(--font-serif)' : 'var(--font-sans)',
+          lineHeight: 1.5,
+          wordBreak: 'break-word',
+        }}>
+          {message.text}
         </div>
+      </div>
+    );
+  }
 
-        {/* Message text */}
-        {isCheck && !isUser ? (
-          <>
-            {verdictLine ? (
-              <div style={{
-                fontSize: '15px',
-                fontWeight: 600,
-                fontFamily: 'var(--font-sans)',
-                color: isNatural ? 'var(--accent-gold)' : 'var(--text-primary)',
-                marginBottom: checkBody ? '8px' : 0,
-              }}>
-                {verdictLine}
-                {message.isStreaming && !checkBody && <span className="streaming-cursor" />}
-              </div>
-            ) : message.isStreaming ? (
-              <span className="streaming-cursor" />
-            ) : null}
-            {checkBody && (
-              <div style={{ fontSize: '13px', fontFamily: 'var(--font-sans)', lineHeight: 1.6, color: 'var(--text-body)', wordBreak: 'break-word' }}>
-                {checkBody}
-                {message.isStreaming && <span className="streaming-cursor" />}
-              </div>
-            )}
-          </>
-        ) : (
-          <div
-            style={{
-              fontSize: isUser ? '14px' : '16px',
-              fontFamily: isUser ? 'var(--font-sans)' : 'var(--font-serif)',
-              lineHeight: 1.55,
-              color: 'var(--text-primary)',
-              wordBreak: 'break-word',
-            }}
-          >
-            {message.text}
-            {message.isStreaming && (
-              <span className="streaming-cursor" />
-            )}
-          </div>
-        )}
+  // ---- OUTPUT (assistant): open on the canvas, byline → hero → thought ----
+  const time = new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const outJa = JP_RE.test(message.text);
+  const label = isCheck
+    ? 'Check'
+    : message.tone
+      ? message.tone.charAt(0).toUpperCase() + message.tone.slice(1)
+      : 'Translation';
+  // Only surface direction for the less-obvious case (output is English → JP→EN).
+  const direction = !isCheck && message.text.trim() && !outJa ? 'JP → EN' : '';
 
-        {/* Explanation for assistant */}
-        {!isUser && message.explanation && (
-          <div
-            style={{
-              fontSize: '13px',
-              lineHeight: 1.5,
-              color: 'var(--text-body)',
-              marginTop: '10px',
-              paddingTop: '10px',
-              borderTop: '1px solid var(--border)',
-              display: 'flex',
-              gap: '6px',
-            }}
-          >
-            <span style={{ flexShrink: 0, marginTop: '1px', color: 'var(--accent-gold)' }}><LightbulbIcon size={14} /></span>
-            <span>{message.explanation}</span>
-          </div>
-        )}
+  // Check results split on the first newline: verdict line + body.
+  let verdictLine = '';
+  let checkBody = '';
+  if (isCheck) {
+    const nl = message.text.indexOf('\n');
+    if (nl > 0) {
+      verdictLine = message.text.slice(0, nl).trim();
+      checkBody = message.text.slice(nl + 1).trim();
+    } else {
+      verdictLine = message.text.trim();
+    }
+  }
+  const isNatural = verdictLine.startsWith('✓');
 
+  return (
+    <div className="msg-row" style={{ marginBottom: '40px' }}>
+      {/* Byline — quiet gold meta line above the output */}
+      <div style={{
+        fontSize: '10px',
+        letterSpacing: '1.4px',
+        textTransform: 'uppercase',
+        color: 'var(--accent-gold)',
+        opacity: 0.85,
+        marginBottom: '9px',
+      }}>
+        {label} · {time}{direction ? ` · ${direction}` : ''}
       </div>
 
-      {/* Action row — a bare icon row BELOW the bubble (not inside it), aligned
-          to the message's side. Hidden while streaming. */}
-      {!message.isStreaming && (!isUser || onDelete) && (
-        <div className="msg-actions" style={{ display: 'flex', gap: '2px', marginTop: '4px', padding: '0 2px' }}>
-          {!isUser && (
-            <IconButton onClick={handleCopy} label={copied ? 'Copied' : 'Copy'} active={copied}>
-              {copied ? <CheckIcon /> : <CopyIcon />}
-            </IconButton>
+      {/* Output */}
+      {isCheck ? (
+        <>
+          {verdictLine ? (
+            <div style={{
+              fontSize: '15px',
+              fontWeight: 600,
+              color: isNatural ? 'var(--accent-gold)' : 'var(--text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}>
+              {verdictLine}
+              {message.isStreaming && !checkBody && <span className="streaming-cursor" />}
+            </div>
+          ) : message.isStreaming ? (
+            <span className="streaming-cursor" />
+          ) : null}
+          {checkBody && (
+            <div style={{ fontSize: '13px', color: 'var(--text-body)', lineHeight: 1.65, marginTop: '9px', maxWidth: '90%', wordBreak: 'break-word' }}>
+              {checkBody}
+              {message.isStreaming && <span className="streaming-cursor" />}
+            </div>
           )}
+        </>
+      ) : (
+        <div style={{
+          fontFamily: outJa ? 'var(--font-serif)' : 'var(--font-sans)',
+          fontSize: outJa ? '22px' : '19px',
+          color: 'var(--text-primary)',
+          lineHeight: 1.55,
+          wordBreak: 'break-word',
+        }}>
+          {message.text}
+          {message.isStreaming && <span className="streaming-cursor" />}
+        </div>
+      )}
+
+      {/* Thought — the explanation, as a quiet aside */}
+      {!isCheck && message.explanation && (
+        <div style={{ display: 'flex', gap: '8px', marginTop: '13px', fontSize: '13px', color: 'var(--text-body)', lineHeight: 1.65, maxWidth: '90%' }}>
+          <span style={{ flexShrink: 0, marginTop: '2px', color: 'var(--accent-gold)', opacity: 0.8 }}><LightbulbIcon size={14} /></span>
+          <span>{message.explanation}</span>
+        </div>
+      )}
+
+      {/* Hover actions */}
+      {!message.isStreaming && (
+        <div className="msg-actions" style={{ display: 'flex', gap: '2px', marginTop: '10px' }}>
+          <IconButton onClick={handleCopy} label={copied ? 'Copied' : 'Copy'} active={copied}>
+            {copied ? <CheckIcon /> : <CopyIcon />}
+          </IconButton>
           {onDelete && (
-            <IconButton onClick={() => onDelete(message.id)} label="Delete">
-              <TrashIcon />
-            </IconButton>
+            <IconButton onClick={() => onDelete(message.id)} label="Delete"><TrashIcon /></IconButton>
           )}
         </div>
       )}
-      </div>
     </div>
   );
 }

@@ -81,14 +81,6 @@ textarea::placeholder {
   display: none;
 }
 
-/* The date-jump nav docks outside the right edge of the 800px content column,
-   so it's off-screen on phones/tablets. Only show it when there's room. */
-@media (max-width: 1000px) {
-  .date-jump-nav {
-    display: none;
-  }
-}
-
 /* Toast + ConfirmModal entrance animations (referenced from inline styles). */
 @keyframes slideUp {
   from {
