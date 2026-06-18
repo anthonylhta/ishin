@@ -81,6 +81,11 @@ export const TrashIcon = ({ size }: { size?: number }) => (
   </Icon>
 );
 
+// Points down by default; rotate 180° for the open/expanded state.
+export const ChevronIcon = ({ size }: { size?: number }) => (
+  <Icon size={size ?? 16}><path d="m6 9 6 6 6-6" /></Icon>
+);
+
 // The brand torii mark (filled, red + gold) — same shapes as app/icon.svg minus
 // the dark background tile, so it sits on any surface. Used for the empty state.
 export const ToriiMark = ({ size = 56 }: { size?: number }) => (
