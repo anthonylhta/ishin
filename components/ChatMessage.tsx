@@ -2,32 +2,12 @@
 
 import { memo, useState } from 'react';
 import { ChatMessage as ChatMessageType } from '@/hooks/useCloudStorage';
+import { CopyIcon, CheckIcon, TrashIcon, LightbulbIcon } from '@/components/Icons';
 
 interface Props {
   message: ChatMessageType;
   onDelete?: (id: string) => void;
 }
-
-// Bare inline icons (Lucide-style, currentColor) for the message action row.
-const ICON = {
-  width: 15,
-  height: 15,
-  viewBox: '0 0 24 24',
-  fill: 'none',
-  stroke: 'currentColor',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-};
-const CopyIcon = () => (
-  <svg {...ICON}><rect x="9" y="9" width="11" height="11" rx="2" /><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" /></svg>
-);
-const CheckIcon = () => (
-  <svg {...ICON}><path d="M20 6 9 17l-5-5" /></svg>
-);
-const TrashIcon = () => (
-  <svg {...ICON}><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M10 11v6M14 11v6" /></svg>
-);
 
 // A bare icon button for the action row — subtle by default (works on touch,
 // no hover required), brightening on hover; gold when "active" (copied).
@@ -202,7 +182,7 @@ function ChatMessage({ message, onDelete }: Props) {
               gap: '6px',
             }}
           >
-            <span>💡</span>
+            <span style={{ flexShrink: 0, marginTop: '1px', color: 'var(--accent-gold)' }}><LightbulbIcon size={14} /></span>
             <span>{message.explanation}</span>
           </div>
         )}

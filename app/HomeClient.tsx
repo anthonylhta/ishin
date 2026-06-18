@@ -6,6 +6,7 @@ import { useCloudStorage } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
 import Toast from '@/components/Toast';
 import ConfirmModal from '@/components/ConfirmModal';
+import { SendIcon, SpinnerIcon, ClipboardIcon, ToriiMark, WarningIcon } from '@/components/Icons';
 
 const TONES = [
   { id: 'casual', kanji: '普通', label: 'CASUAL' },
@@ -459,7 +460,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
             </div>
           ) : groupedMessages.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-tertiary)' }}>
-              <div style={{ fontSize: '48px', marginBottom: '16px' }}>⛩️</div>
+              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><ToriiMark size={56} /></div>
               <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
                 Translate between Japanese and English
               </div>
@@ -649,7 +650,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
                   justifyContent: 'center',
                 }}
               >
-                📋
+                <ClipboardIcon size={18} />
               </button>
             )}
             <button
@@ -673,7 +674,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
                 justifyContent: 'center',
               }}
             >
-              {isLoading ? '⋯' : '→'}
+              {isLoading ? <SpinnerIcon size={19} /> : <SendIcon size={19} />}
             </button>
           </div>
         </div>
@@ -803,7 +804,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
                   justifyContent: 'center',
                 }}
               >
-                {isLoading ? '⋯' : '→'}
+                {isLoading ? <SpinnerIcon size={19} /> : <SendIcon size={19} />}
               </button>
             </div>
           </div>
@@ -815,7 +816,7 @@ export default function HomeClient({ initialIsMobile = false }: { initialIsMobil
         message={toastMessage ?? ''}
         isVisible={toastMessage !== null}
         onHide={hideToast}
-        icon="⚠️"
+        icon={<span style={{ color: 'var(--accent-gold)', display: 'inline-flex' }}><WarningIcon size={16} /></span>}
       />
 
       <ConfirmModal
