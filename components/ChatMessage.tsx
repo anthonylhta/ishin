@@ -112,9 +112,9 @@ function ChatMessage({ message, onDelete }: Props) {
         ) : (
           <div
             style={{
-              fontSize: isUser ? '14px' : '18px',
+              fontSize: isUser ? '14px' : '16px',
               fontFamily: isUser ? 'var(--font-sans)' : 'var(--font-serif)',
-              lineHeight: 1.5,
+              lineHeight: 1.55,
               color: 'var(--text-primary)',
               wordBreak: 'break-word',
             }}
@@ -130,7 +130,7 @@ function ChatMessage({ message, onDelete }: Props) {
         {!isUser && message.explanation && (
           <div
             style={{
-              fontSize: '12px',
+              fontSize: '13px',
               lineHeight: 1.5,
               color: 'var(--text-body)',
               marginTop: '10px',
