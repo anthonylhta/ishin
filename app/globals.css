@@ -123,6 +123,14 @@ textarea::placeholder {
   50% { opacity: 0; }
 }
 
+/* Spinner icon (loading state on the send button). */
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.icon-spin {
+  animation: spin 0.7s linear infinite;
+}
+
 .streaming-cursor {
   display: inline-block;
   width: 2px;

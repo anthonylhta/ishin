@@ -1,15 +1,16 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, type ReactNode } from 'react';
+import { CheckIcon } from '@/components/Icons';
 
 interface ToastProps {
   message: string;
   isVisible: boolean;
   onHide: () => void;
-  icon?: string;
+  icon?: ReactNode;
 }
 
-export default function Toast({ message, isVisible, onHide, icon = '✓' }: ToastProps) {
+export default function Toast({ message, isVisible, onHide, icon = <CheckIcon size={16} /> }: ToastProps) {
   useEffect(() => {
     if (isVisible) {
       // Every current toast is an error message — give it time to be read.
@@ -46,7 +47,7 @@ export default function Toast({ message, isVisible, onHide, icon = '✓' }: Toas
       gap: '8px',
       boxShadow: '0 8px 20px rgba(0,0,0,0.3)',
     }}>
-        <span>{icon}</span>
+        <span style={{ display: 'inline-flex', alignItems: 'center' }}>{icon}</span>
         {message}
       </div>
     </div>
