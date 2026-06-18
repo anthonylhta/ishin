@@ -27,10 +27,10 @@ The product bias is **naturalness over literalness**, with casual as the primary
 - **Automatic direction detection** — type in either language; it detects the source and translates into the other.
 - **Naturalness check** — switch to CHECK mode to verify your Japanese (or English) is correct and natural for the chosen register. Returns a ✓ / ⚠ verdict with a short explanation and a suggested fix, checking for common Japanese mistakes such as giving/receiving direction (あげる/くれる), transitive/intransitive verb pairs, particle choice, and register consistency.
 - **Nuance explanations** — every translation comes with a one-line note on the cultural or stylistic choice behind it.
-- **Chat-style history** — translations and checks flow into a conversation view, grouped by date, with a sticky jump nav once there are several groups.
+- **Translation feed** — translations and checks flow into a clean, minimal feed grouped by date: your input sits as a small contained note and the translation is given the focus, each with a one-line nuance note beneath it.
 - **Accounts & private history** — sign in and your history syncs to your account across devices; guests get an ephemeral, in-memory session.
 - **History management** — copy any result, delete single entries, or clear everything.
-- **Japanese-inspired UI** — Mincho serif typography, a dark palette, and a custom design-token system.
+- **Considered, minimal UI** — a restrained, content-first design where the input recedes and the translation is the hero, set in Mincho serif for Japanese on a warm "ink-wash" dark palette, all built from a custom CSS design-token system and a consistent inline-SVG icon set.
 
 ## Tech stack
 
