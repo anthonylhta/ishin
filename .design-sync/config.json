@@ -1,0 +1,9 @@
+{
+  "projectId": "74b6a097-572b-48bf-a4ac-e3c4931003f6",
+  "shape": "package",
+  "pkg": "tone-translator",
+  "globalName": "ToneTranslator",
+  "tokensOnly": true,
+  "cssEntry": "app/globals.css",
+  "readmeHeader": ".design-sync/conventions.md"
+}

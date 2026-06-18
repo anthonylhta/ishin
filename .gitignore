@@ -51,3 +51,8 @@ CLAUDE.md
 /notes
 # the hook that nudges me to keep notes/ up to date — part of the same local workflow
 /.claude/hooks/notes-reminder.sh
+
+# design-sync build output (regenerated; durable inputs live in .design-sync/)
+ds-bundle/
+.ds-sync/
+.design-sync/.cache/
