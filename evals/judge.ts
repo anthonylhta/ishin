@@ -49,7 +49,11 @@ export function parseVerdict(raw: string): Verdict {
   if (start === -1 || end === -1 || end < start) {
     throw new Error(`Judge returned no JSON object: ${raw.slice(0, 200)}`);
   }
-  const parsed: unknown = JSON.parse(raw.slice(start, end + 1));
+  // Sonnet occasionally echoes the prompt's <…> placeholder syntax literally
+  // (e.g. `"natural": <false>`), which isn't valid JSON. Unwrap angle brackets
+  // around scalar values before parsing so that one slip doesn't fail the case.
+  const json = raw.slice(start, end + 1).replace(/<\s*(true|false|null|-?\d+(?:\.\d+)?)\s*>/gi, '$1');
+  const parsed: unknown = JSON.parse(json);
   if (typeof parsed !== 'object' || parsed === null) {
     throw new Error('Judge JSON was not an object');
   }
