@@ -154,5 +154,152 @@
     "tone": "casual",
     "watch_for": "Direction JP→EN (mixed input). 万 = ten-thousands of yen, so 11〜21万 = 110,000–210,000 yen — keep it as yen (e.g. 110k–210k yen), never 'grand', which implies USD/GBP and changes the amount. Same currency-fidelity class as ADR 0034.",
     "regression_of": "mined from production 2026-06-12, related ADR 0034"
+  },
+  {
+    "id": "giving-receiving-you-to-me",
+    "input": "i don't think you'd give it to me anyway",
+    "tone": "casual",
+    "watch_for": "Speaker is the recipient ('you give me') → the giver is the listener, so くれる/くれない with the listener as the (often-dropped) subject, never 俺がくれる (the speaker can't be くれる's giver). Don't invert the meaning to 'I give'.",
+    "regression_of": "mined from production 2026-05-27"
+  },
+  {
+    "id": "jp-en-kureru-subject",
+    "input": "こうやって日本語を話してくれる海外の人が増えたから、なんで勉強するんだろうって思う",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 話してくれる marks the overseas people as doing the speaker (a Japanese-speaker) a favor, so 勉強する's subject is THEM — render it as wondering why those overseas people study Japanese, not 'why I even bother studying'. Don't flip the speaker into a foreign learner.",
+    "regression_of": "mined from production 2026-06-11"
+  },
+  {
+    "id": "no-invented-nuance-yappa",
+    "input": "ur gonna meet with a guy lol",
+    "tone": "casual",
+    "watch_for": "A plain neutral statement — don't add やっぱ/やっぱり ('as I expected / I knew it'), which injects a prior-suspicion nuance absent from the source.",
+    "regression_of": "mined from production 2026-06-02"
+  },
+  {
+    "id": "interjection-nooo-protest",
+    "input": "nooo, if they're nice that's more than enough",
+    "tone": "casual",
+    "watch_for": "'nooo' is an emphatic protest/disagreement → いやいや / えー / ううん, not the affirming ええ (which reads as agreement). Keep the protesting beat.",
+    "regression_of": "mined from production 2026-06-02"
+  },
+  {
+    "id": "interjection-no-way-opener",
+    "input": "lol no way, you actually went?? send pics",
+    "tone": "casual",
+    "watch_for": "Keep the surprised/amused 'lol / no way' opener (まじか / うそ / えー〜 + 笑/www); don't flatten it to a plain question. The disbelief beat must survive.",
+    "regression_of": "mined from production 2026-06-15"
+  },
+  {
+    "id": "meaning-dont-even-know",
+    "input": "i don't even know what this is, it's too zoomed in",
+    "tone": "casual",
+    "watch_for": "Keep the 'I don't even know what this is' sense (なんだかわからない / これ何かもわからない), not just the zoom complaint. Don't drop the confusion and leave only frustration.",
+    "regression_of": "mined from production 2026-06-19"
+  },
+  {
+    "id": "filler-yeah-untranslated",
+    "input": "yeah im going to work now",
+    "tone": "casual",
+    "watch_for": "Render the English filler 'yeah' in Japanese (うん / おう / じゃあ) — never leave the English word 'yeah' sitting inside the Japanese output.",
+    "regression_of": "mined from production 2026-06-23"
+  },
+  {
+    "id": "jp-en-emphatic-mo",
+    "input": "税金87,000円も引かれた",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. The も after 87,000円 is emphatic ('as much as / a whole 87,000 yen'), conveying surprise/complaint at the size — not additive 'too / also'. Keep the 'that much' frustration.",
+    "regression_of": "mined from production 2026-06-25"
+  },
+  {
+    "id": "tone-self-amused-not-disgust",
+    "input": "wtf did i get lol, this thing looks so ugly",
+    "tone": "casual",
+    "watch_for": "Keep the self-amused, joking tone (wtf/lol) — e.g. なにこれ笑 / ブサイクすぎでしょ笑. Don't escalate to genuine disgust (気持ち悪い), which is stronger and more negative than the lighthearted 'ugly lol'.",
+    "regression_of": "mined from production 2026-06-07"
+  },
+  {
+    "id": "formal-no-invented-apology",
+    "input": "hey im literally starving right now, you wanna get something to eat? i was thinking pasta",
+    "tone": "formal",
+    "watch_for": "Formal register is correct, but keep it natural spoken keigo — don't invent an apology (申し訳ございませんが) when the source has none, and don't bury it in business-email indirection. A friendly invitation, politely phrased.",
+    "regression_of": "mined from production 2026-05-28"
+  },
+  {
+    "id": "jp-en-kiku-attend",
+    "input": "新しいわけじゃないんだけど職員全員対象で聞かなきゃいけなかった、寝てた笑",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 聞かなきゃいけなかった here = had to attend / sit through a mandatory all-staff session, not 'ask everyone'. 寝てた is the SPEAKER dozing off, not other people. Don't reverse the scenario.",
+    "regression_of": "mined from production 2026-06-06"
+  },
+  {
+    "id": "jp-en-itamu-spoil",
+    "input": "たけのこって結構傷みやすいんだよ",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 傷む for food = go bad / spoil, not 'bruise'. Bamboo shoots spoil; they don't bruise.",
+    "regression_of": "mined from production 2026-06-07"
+  },
+  {
+    "id": "word-sense-fly-over",
+    "input": "i think you have to fly over it to see it",
+    "tone": "casual",
+    "watch_for": "'fly over' = pass over it by air (上空を飛ぶ / 上を飛ぶ), not 飛び越える (jump / leap over).",
+    "regression_of": "mined from production 2026-06-19"
+  },
+  {
+    "id": "jp-en-yaku-tan",
+    "input": "いつも痛くならないくらいに焼いてたのに今回やりすぎた",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. Context is sun-tanning: 焼く = tan / sunbathe and 痛くなる = skin getting painful (sunburnt) — not culinary grilling or burning food. 'I usually tan just short of it hurting, but I overdid it this time.'",
+    "regression_of": "mined from production 2026-06-21"
+  },
+  {
+    "id": "jp-en-onomatopoeia-puripuri",
+    "input": "ぷりぷりしててかわいい",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. ぷりぷり = a springy / bouncy / jiggly tactile quality (and cute with it), not 'plump' (which is about size). Keep the playful, springy nuance.",
+    "regression_of": "mined from production 2026-06-23"
+  },
+  {
+    "id": "slang-im-him-flex",
+    "input": "saw a girl who was just my type, went up to her and she gave me her ig, im lowkey him",
+    "tone": "casual",
+    "watch_for": "'I'm him / im lowkey him' is a self-hype flex ('I'm that guy', 俺まじやばくない？/ 俺ってやつだわ style), NOT a confession of love. Don't render it as 惚れた / 'I fell for her'.",
+    "regression_of": "mined from production 2026-05-23"
+  },
+  {
+    "id": "content-fidelity-japanese-acai",
+    "input": "japanese acai looks so healthy lol",
+    "tone": "casual",
+    "watch_for": "Keep 'japanese' as a qualifier on the acai (日本のアサイー) and don't invent 'bowl' (ボウル), which isn't in the source. No dropping or adding content.",
+    "regression_of": "mined from production 2026-05-23"
+  },
+  {
+    "id": "casual-request-not-kudasai",
+    "input": "send me a cat like this, a sad but cute looking one",
+    "tone": "casual",
+    "watch_for": "Casual request → 〜して / 〜してくれない？ / ちょうだい, not the polite ください, which leaks formal register into casual.",
+    "regression_of": "mined from production 2026-05-26"
+  },
+  {
+    "id": "particle-de-before-ichiban",
+    "input": "wouldn't it be the most expensive hotel in singapore",
+    "tone": "casual",
+    "watch_for": "A location before a superlative needs で: シンガポールで一番高いホテル, not bare シンガポール一番高い (which reads like learner Japanese).",
+    "regression_of": "mined from production 2026-06-10"
+  },
+  {
+    "id": "casual-register-consistency",
+    "input": "we just call it sushi lol",
+    "tone": "casual",
+    "watch_for": "Keep one consistent casual register — don't mix a rough pronoun like 俺ら with っす (softened bait-keigo). Plain casual throughout (俺ら…呼んでるだけ style).",
+    "regression_of": "mined from production 2026-06-19"
+  },
+  {
+    "id": "jp-en-name-anthony",
+    "input": "じゃーあんそにーがそのnoodles全部食っちゃうよ",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. あんそにー is the name 'Anthony', not 'Anson'. Keep the embedded English (noodles) and transliterate the name correctly.",
+    "regression_of": "mined from production 2026-05-30"
   }
 ]
