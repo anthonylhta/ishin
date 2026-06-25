@@ -97,17 +97,27 @@ async function countUnchecked(
 ): Promise<number | null> {
   const q = new URLSearchParams({ select: 'id', message_type: 'eq.translation', limit: '1' });
   if (watermark) q.set('created_at', `gt.${watermark}`);
-  const r = await fetch(`${url}/rest/v1/translations?${q}`, {
-    headers: {
-      apikey: key,
-      Authorization: `Bearer ${key}`,
-      Prefer: 'count=exact',
-      Range: '0-0',
-    },
-  });
-  const total = r.headers.get('content-range')?.split('/')[1];
-  const n = Number(total);
-  return Number.isFinite(n) ? n : null;
+  try {
+    const r = await fetch(`${url}/rest/v1/translations?${q}`, {
+      headers: {
+        apikey: key,
+        Authorization: `Bearer ${key}`,
+        Prefer: 'count=exact',
+        Range: '0-0',
+      },
+    });
+    const total = r.headers.get('content-range')?.split('/')[1];
+    const n = Number(total);
+    return Number.isFinite(n) ? n : null;
+  } catch (err) {
+    // A transient network error on this cosmetic stats call must never fail the
+    // run. By the time main() calls this, the proposals and watermark are already
+    // persisted, so a dropped socket here should only cost the closing count — not
+    // the run, and not a red CI job (bug 2026-06-25). null already means "unknown"
+    // to the caller; warn so the failed count is visible rather than silent.
+    console.warn(`Could not count unchecked rows (reporting unknown): ${String(err)}`);
+    return null;
+  }
 }
 
 // One mined translation that the judge flagged, packaged for human review.
@@ -363,19 +373,70 @@ async function main(): Promise<void> {
       `Proposed ${proposals.length} new case(s).`
   );
 
-  // Advance the watermark to the newest row we fetched (rows are ascending, so
-  // it's the last one). This covers judged, skipped, and clean rows alike — they
-  // have all been seen, so the next run won't re-check them. Persisted even when
-  // nothing was proposed, otherwise a clean run would re-judge the same rows.
+  // Persist the proposals FIRST — they are the expensive, irreplaceable output of
+  // this run (one real judge call each). Only once they are safely on disk do we
+  // advance the watermark, so a crash between the two can never mark these rows
+  // "seen" while silently discarding what we mined (bug 2026-06-25). The two
+  // writes aren't atomic: a crash in the gap leaves the watermark un-advanced, so
+  // the next run re-judges these rows and re-appends them to mined.jsonl. That's
+  // the deliberate trade — recoverable duplicates beat silently lost proposals.
+  const minedAt = new Date().toISOString();
+  if (proposals.length > 0) {
+    console.log('\n--- proposed golden cases (review before adding) ---');
+    for (const p of proposals) {
+      console.log(`\n⚠ ${p.proposedCase.id} (score ${p.score})`);
+      console.log(`  in:   ${p.proposedCase.input}`);
+      console.log(`  out:  ${p.output}`);
+      console.log(`  why:  ${p.proposedCase.watch_for}`);
+    }
+
+    mkdirSync(PROPOSAL_DIR, { recursive: true });
+
+    // Cumulative append-only log: one line per flagged translation, so frequent
+    // small runs accrete into a single file you review over time.
+    const logLines =
+      proposals
+        .map((p) =>
+          JSON.stringify({
+            minedAt,
+            id: p.proposedCase.id,
+            score: p.score,
+            tone: p.proposedCase.tone,
+            input: p.proposedCase.input,
+            output: p.output,
+            watch_for: p.proposedCase.watch_for,
+            issues: p.issues,
+            created_at: p.created_at,
+          })
+        )
+        .join('\n') + '\n';
+    appendFileSync(LOG_FILE, logLines);
+
+    // Per-run snapshot, ready to paste into the golden set after review.
+    const file = resolve(PROPOSAL_DIR, `${minedAt.replace(/[:.]/g, '-')}.json`);
+    writeFileSync(file, JSON.stringify({ minedAt, threshold: THRESHOLD, proposals }, null, 2));
+    console.log(`\nProposals appended to ${LOG_FILE}`);
+    console.log(`Snapshot written to ${file}`);
+    console.log('Review them, then paste the keepers into evals/golden-set.json.');
+  } else {
+    console.log('\nNothing to propose — these translations look clean. 🎉');
+  }
+
+  // Only now advance the watermark to the newest row we fetched (rows are
+  // ascending, so it's the last one). This covers judged, skipped, and clean rows
+  // alike — they've all been seen, so the next run won't re-check them. Persisted
+  // even when nothing was proposed, otherwise a clean run would re-judge the rows.
   const newWatermark = rows.length > 0 ? rows[rows.length - 1].created_at : state.watermark;
   state = {
     watermark: newWatermark,
-    lastRunAt: new Date().toISOString(),
+    lastRunAt: minedAt,
     totalChecked: state.totalChecked + reviewed,
     totalProposed: state.totalProposed + proposals.length,
   };
   writeState(state);
 
+  // Closing stats line only — countUnchecked never throws (it returns null on a
+  // network error), so a dropped socket here can't undo the work saved above.
   const remaining = await countUnchecked(supabaseUrl, serviceRoleKey, newWatermark);
   const through = newWatermark ? newWatermark.slice(0, 19).replace('T', ' ') : 'nothing yet';
   const remainingStr = remaining === null ? 'an unknown number of' : remaining.toLocaleString();
@@ -384,56 +445,20 @@ async function main(): Promise<void> {
       `(${state.totalChecked} checked, ${state.totalProposed} proposed all-time).`
   );
 
-  summary(`### 🕵️ Failure-miner — ${new Date().toISOString().slice(0, 10)}`);
+  summary(`### 🕵️ Failure-miner — ${minedAt.slice(0, 10)}`);
   summary(
     `Reviewed **${reviewed}** translations · proposed **${proposals.length}** new golden case(s) · ` +
       `**${remainingStr}** still unchecked.\n`
   );
-
   if (proposals.length === 0) {
-    console.log('\nNothing to propose — these translations look clean. 🎉');
     summary('Nothing to propose — these translations look clean. 🎉');
-    return;
+  } else {
+    for (const p of proposals) {
+      summary(
+        `- **${p.proposedCase.id}** (score ${p.score}) — \`${p.proposedCase.input}\` → ${p.proposedCase.watch_for}`
+      );
+    }
   }
-
-  console.log('\n--- proposed golden cases (review before adding) ---');
-  for (const p of proposals) {
-    console.log(`\n⚠ ${p.proposedCase.id} (score ${p.score})`);
-    console.log(`  in:   ${p.proposedCase.input}`);
-    console.log(`  out:  ${p.output}`);
-    console.log(`  why:  ${p.proposedCase.watch_for}`);
-    summary(`- **${p.proposedCase.id}** (score ${p.score}) — \`${p.proposedCase.input}\` → ${p.proposedCase.watch_for}`);
-  }
-
-  mkdirSync(PROPOSAL_DIR, { recursive: true });
-  const minedAt = new Date().toISOString();
-
-  // Cumulative append-only log: one line per flagged translation, so frequent
-  // small runs accrete into a single file you review over time.
-  const logLines =
-    proposals
-      .map((p) =>
-        JSON.stringify({
-          minedAt,
-          id: p.proposedCase.id,
-          score: p.score,
-          tone: p.proposedCase.tone,
-          input: p.proposedCase.input,
-          output: p.output,
-          watch_for: p.proposedCase.watch_for,
-          issues: p.issues,
-          created_at: p.created_at,
-        })
-      )
-      .join('\n') + '\n';
-  appendFileSync(LOG_FILE, logLines);
-
-  // Per-run snapshot, ready to paste into the golden set after review.
-  const file = resolve(PROPOSAL_DIR, `${minedAt.replace(/[:.]/g, '-')}.json`);
-  writeFileSync(file, JSON.stringify({ minedAt, threshold: THRESHOLD, proposals }, null, 2));
-  console.log(`\nProposals appended to ${LOG_FILE}`);
-  console.log(`Snapshot written to ${file}`);
-  console.log('Review them, then paste the keepers into evals/golden-set.json.');
 }
 
 main().catch((err: unknown) => {
