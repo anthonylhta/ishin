@@ -71,8 +71,22 @@ async function judge(client: Anthropic, c: GoldenCase, output: string): Promise<
 async function runCase(client: Anthropic, c: GoldenCase): Promise<CaseResult> {
   const runs: RunSample[] = [];
   for (let i = 0; i < REPEATS; i++) {
-    const output = await translate(client, c);
-    runs.push({ output, ...(await judge(client, c, output)) });
+    try {
+      const output = await translate(client, c);
+      runs.push({ output, ...(await judge(client, c, output)) });
+    } catch (err) {
+      // One flaky repeat — a malformed judge verdict or a transient API error —
+      // must not crash the whole run (it would discard every case after it).
+      // Record it as a failed sample so the other repeats and cases still stand.
+      console.log(`  ! ${c.id} run ${i + 1} errored: ${String(err).slice(0, 100)}`);
+      runs.push({
+        output: '',
+        score: 0,
+        natural: false,
+        watch_for_violated: false,
+        issues: [`run errored: ${String(err).slice(0, 120)}`],
+      });
+    }
   }
 
   const avgScore = runs.reduce((s, r) => s + r.score, 0) / runs.length;
