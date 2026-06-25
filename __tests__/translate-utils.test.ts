@@ -6,6 +6,7 @@ import {
   buildSystemPrompt,
   buildCheckPrompt,
   detectToEnglish,
+  translateModelFor,
   validateTranslationInput,
   hits,
   TONES,
@@ -117,6 +118,16 @@ describe('detectToEnglish', () => {
 
   it('treats mixed input containing Japanese as Japanese source', () => {
     expect(detectToEnglish("Let's meet at 渋谷")).toBe(true);
+  });
+});
+
+describe('translateModelFor', () => {
+  it('uses the stronger Sonnet for JP→EN (comprehension)', () => {
+    expect(translateModelFor(true)).toBe('claude-sonnet-4-6');
+  });
+
+  it('uses Haiku for EN→JP (the primary casual register)', () => {
+    expect(translateModelFor(false)).toBe('claude-haiku-4-5-20251001');
   });
 });
 

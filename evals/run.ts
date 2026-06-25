@@ -12,15 +12,18 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildSystemPrompt, detectToEnglish } from '../app/api/translate/utils';
+import { buildSystemPrompt, detectToEnglish, translateModelFor } from '../app/api/translate/utils';
 import { buildJudgePrompt, parseVerdict } from './judge';
 import type { CaseResult, GoldenCase, RunSample, Verdict } from './types';
 
-// Keep in sync with app/api/translate/route.ts. Overridable via
-// EVAL_TRANSLATE_MODEL to A/B a candidate translator (e.g. Sonnet) against the
-// shipping one without editing this file; the chosen model is printed in the
-// header and recorded in the scorecard.
-const TRANSLATE_MODEL = process.env.EVAL_TRANSLATE_MODEL ?? 'claude-haiku-4-5-20251001';
+// The translator mirrors production: per-direction by default (Haiku EN→JP,
+// Sonnet JP→EN — see translateModelFor in route.ts's utils). EVAL_TRANSLATE_MODEL
+// forces a single model across both directions, to A/B a candidate against the
+// shipping split; the chosen model is printed in the header and recorded in the
+// scorecard.
+const TRANSLATE_MODEL_OVERRIDE = process.env.EVAL_TRANSLATE_MODEL;
+const TRANSLATE_MODEL_LABEL =
+  TRANSLATE_MODEL_OVERRIDE ?? 'per-direction (Haiku EN→JP / Sonnet JP→EN)';
 const TRANSLATE_MAX_TOKENS = 1024;
 const TRANSLATE_TEMPERATURE = 0.5;
 
@@ -48,7 +51,7 @@ async function translate(client: Anthropic, c: GoldenCase): Promise<string> {
     : `Translate this English text into Japanese in the "${c.tone}" register:\n\n"""${c.input}"""`;
 
   const msg = await client.messages.create({
-    model: TRANSLATE_MODEL,
+    model: TRANSLATE_MODEL_OVERRIDE ?? translateModelFor(toEnglish),
     max_tokens: TRANSLATE_MAX_TOKENS,
     temperature: TRANSLATE_TEMPERATURE,
     system: buildSystemPrompt(c.tone, toEnglish),
@@ -131,7 +134,7 @@ async function main(): Promise<void> {
     readFileSync(resolve(EVALS_DIR, 'golden-set.json'), 'utf8')
   ) as GoldenCase[];
 
-  console.log(`Running ${cases.length} cases × ${REPEATS} repeat(s) — model ${TRANSLATE_MODEL}, judge ${JUDGE_MODEL}\n`);
+  console.log(`Running ${cases.length} cases × ${REPEATS} repeat(s) — model ${TRANSLATE_MODEL_LABEL}, judge ${JUDGE_MODEL}\n`);
 
   const results: CaseResult[] = [];
   for (const c of cases) {
@@ -171,7 +174,7 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         ranAt: new Date().toISOString(),
-        translateModel: TRANSLATE_MODEL,
+        translateModel: TRANSLATE_MODEL_LABEL,
         judgeModel: JUDGE_MODEL,
         repeats: REPEATS,
         passed,
