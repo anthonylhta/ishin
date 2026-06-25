@@ -7,6 +7,7 @@ import {
   isPaused,
   buildSystemPrompt,
   detectToEnglish,
+  translateModelFor,
   validateTranslationInput,
 } from './utils';
 
@@ -50,7 +51,7 @@ export async function POST(request: NextRequest) {
       : `Translate this English text into Japanese in the "${selectedTone}" register:\n\n"""${text}"""`;
 
     const stream = client.messages.stream({
-      model: 'claude-haiku-4-5-20251001',
+      model: translateModelFor(toEnglish),
       // A maxed-out 2000-char input can exceed 1024 output tokens (JP↔EN both
       // directions); only generated tokens are billed, so headroom is free.
       max_tokens: 2048,
