@@ -326,51 +326,70 @@ async function main(): Promise<void> {
   const proposals: Proposal[] = [];
   let reviewed = 0;
   let skipped = 0;
+  let errored = 0;
+
+  // How far it is safe to advance the watermark. Rows are processed oldest-first
+  // and the watermark is a single `created_at` threshold (`gt.watermark`), so it
+  // can only ever skip a contiguous prefix — it cannot exclude one row in the
+  // middle. We therefore advance it only through cleanly-processed rows and FREEZE
+  // it at the first judge error, so an errored row (and everything after it) is
+  // re-fetched next run rather than marked "seen" and skipped forever. A transient
+  // judge outage must not silently drop production rows from mining.
+  let safeWatermark = state.watermark;
+  let sawError = false;
 
   for (const row of rows) {
     const input = row.user_text.trim();
     if (!input || known.has(input)) {
       skipped++;
+      if (!sawError) safeWatermark = row.created_at;
       continue;
     }
-    reviewed++;
 
     const tone = row.tone as ToneId;
     let v: MinerVerdict;
     try {
       v = await judge(mode, client, input, tone, row.assistant_text);
     } catch (err) {
-      console.log(`?  ${input.slice(0, 40)} — judge error, skipped (${String(err)})`);
+      console.log(`?  ${input.slice(0, 40)} — judge error, will retry next run (${String(err)})`);
+      errored++;
+      sawError = true; // don't advance the watermark past a row we never judged
       continue;
     }
+    reviewed++; // count only rows actually graded, so totalChecked stays honest
 
     const flagged = v.score <= THRESHOLD || !v.natural;
     console.log(`${flagged ? '⚠' : '✓'} score ${v.score}  ${input.slice(0, 50)}`);
-    if (!flagged) continue;
+    if (flagged) {
+      // Record the source so a later repeat of the same text isn't proposed twice
+      // (the top-of-loop guard then skips it).
+      known.add(input);
 
-    // Record the source so a later repeat of the same text isn't proposed twice
-    // (the top-of-loop guard then skips it).
-    known.add(input);
+      const stampId = row.created_at.slice(0, 10).replace(/-/g, '');
+      proposals.push({
+        proposedCase: {
+          id: `mined-${stampId}-${proposals.length + 1}`,
+          input,
+          tone,
+          watch_for: v.watch_for || v.issues.join('; ') || 'unnatural or incorrect output',
+          regression_of: `mined from production ${row.created_at.slice(0, 10)}`,
+        },
+        score: v.score,
+        issues: v.issues,
+        output: row.assistant_text,
+        created_at: row.created_at,
+      });
+    }
 
-    const stampId = row.created_at.slice(0, 10).replace(/-/g, '');
-    proposals.push({
-      proposedCase: {
-        id: `mined-${stampId}-${proposals.length + 1}`,
-        input,
-        tone,
-        watch_for: v.watch_for || v.issues.join('; ') || 'unnatural or incorrect output',
-        regression_of: `mined from production ${row.created_at.slice(0, 10)}`,
-      },
-      score: v.score,
-      issues: v.issues,
-      output: row.assistant_text,
-      created_at: row.created_at,
-    });
+    // Judged cleanly (flagged or not) — safe to advance past it, unless an earlier
+    // row in this run already errored and froze the watermark.
+    if (!sawError) safeWatermark = row.created_at;
   }
 
+  const deferredNote = errored > 0 ? ` ${errored} deferred to next run (judge error).` : '';
   console.log(
     `\nReviewed ${reviewed}, skipped ${skipped} (empty or already in golden set). ` +
-      `Proposed ${proposals.length} new case(s).`
+      `Proposed ${proposals.length} new case(s).${deferredNote}`
   );
 
   // Persist the proposals FIRST — they are the expensive, irreplaceable output of
@@ -422,11 +441,14 @@ async function main(): Promise<void> {
     console.log('\nNothing to propose — these translations look clean. 🎉');
   }
 
-  // Only now advance the watermark to the newest row we fetched (rows are
-  // ascending, so it's the last one). This covers judged, skipped, and clean rows
-  // alike — they've all been seen, so the next run won't re-check them. Persisted
-  // even when nothing was proposed, otherwise a clean run would re-judge the rows.
-  const newWatermark = rows.length > 0 ? rows[rows.length - 1].created_at : state.watermark;
+  // Only now advance the watermark — to `safeWatermark`, the last row processed
+  // cleanly. On a fully-clean run that's the newest fetched row (judged, skipped,
+  // and clean rows alike have all been seen); if a judge call errored mid-run it's
+  // frozen at the row before the error, so that row is retried next run instead of
+  // skipped. Falls back to the prior watermark when nothing advanced it (no rows,
+  // or the very first row errored). Persisted even when nothing was proposed,
+  // otherwise a clean run would re-judge the same rows.
+  const newWatermark = safeWatermark;
   state = {
     watermark: newWatermark,
     lastRunAt: minedAt,
@@ -448,7 +470,7 @@ async function main(): Promise<void> {
   summary(`### 🕵️ Failure-miner — ${minedAt.slice(0, 10)}`);
   summary(
     `Reviewed **${reviewed}** translations · proposed **${proposals.length}** new golden case(s) · ` +
-      `**${remainingStr}** still unchecked.\n`
+      `**${remainingStr}** still unchecked.${deferredNote}\n`
   );
   if (proposals.length === 0) {
     summary('Nothing to propose — these translations look clean. 🎉');
