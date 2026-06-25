@@ -16,8 +16,11 @@ import { buildSystemPrompt, detectToEnglish } from '../app/api/translate/utils';
 import { buildJudgePrompt, parseVerdict } from './judge';
 import type { CaseResult, GoldenCase, RunSample, Verdict } from './types';
 
-// Keep in sync with app/api/translate/route.ts.
-const TRANSLATE_MODEL = 'claude-haiku-4-5-20251001';
+// Keep in sync with app/api/translate/route.ts. Overridable via
+// EVAL_TRANSLATE_MODEL to A/B a candidate translator (e.g. Sonnet) against the
+// shipping one without editing this file; the chosen model is printed in the
+// header and recorded in the scorecard.
+const TRANSLATE_MODEL = process.env.EVAL_TRANSLATE_MODEL ?? 'claude-haiku-4-5-20251001';
 const TRANSLATE_MAX_TOKENS = 1024;
 const TRANSLATE_TEMPERATURE = 0.5;
 
