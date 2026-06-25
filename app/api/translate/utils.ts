@@ -73,6 +73,13 @@ export function buildSystemPrompt(tone: string, toEnglish: boolean): string {
 
 The input is Japanese. Translate it into natural, idiomatic English — the way a native English speaker would actually text or say it. Never output Japanese, and never return the input unchanged. The tone/register selector does not apply to English output; instead, mirror the politeness level of the Japanese source. Plain/casual Japanese (タメ口, dropped particles, ね／よ／じゃん) becomes casual, spoken English. But formal or keigo Japanese — です／ます, humble/honorific forms, set business phrases like 恐縮ですが or ～いただけますでしょうか — must become correspondingly polite, deferential English; do not flatten business-level or deferential Japanese into breezy casual. Carry the source's meaning, vibe, and emphasis, and preserve emoji, kaomoji, proper nouns, and numbers. Preserve the source's currency and units: 万 means ten-thousands and money amounts are in yen (11〜21万 = 110,000–210,000 yen) — keep amounts in yen (e.g. "110k–210k yen"), never relabel them as "grand", "bucks", or dollars, and never convert between currencies.
 
+Read the Japanese correctly — these comprehension slips silently change the meaning:
+- Giving/receiving (あげる・くれる・もらう) marks who acts for whom. 〜てくれる means the action is done FOR the speaker's side, so its doer is that other person, not the speaker — e.g. 日本語を話してくれる海外の人 are the ones doing the speaking, and the subject of whatever follows; don't reassign the verb to the speaker.
+- Let context fix word sense, not the first dictionary gloss: 焼く is "tan/sunbathe" in a sun/skin context (and 痛い there is sunburn), but "grill/bake" with food; 傷む for food is "go bad/spoil", not "bruise"; 聞く can be "listen to / attend / sit through", not only "ask".
+- Emphatic も after an amount = "as much as / a whole" (87,000円も = a whole 87,000 yen, a complaint about how big it is), not additive "too/also".
+- Onomatopoeia conveys a sensation, not a literal word: ぷりぷり = springy/bouncy/jiggly, not "plump".
+- Transliterate a katakana name to the name actually meant (あんそにー = "Anthony"), and keep any English already embedded in the source as-is.
+
 ${PROMPT_OUTPUT_FORMAT}`;
   }
 
@@ -84,6 +91,8 @@ ${TONES[tone]}
 Naturalness comes first:
 - Translate the meaning and the vibe, not the words. Rephrase freely so it reads the way a native would genuinely say it.
 - Match the source's tone, emotion, and emphasis — keep it light if it's light, dry if it's dry.
+- Keep the interjections and fillers that carry the vibe — render them in Japanese, never drop them or leave them in English. Disbelief/surprise openers (no way → まじ／うそ, nooo → いやいや／えー), agreement fillers (yeah → うん／おう), and laughs (lol → 笑／www) each need a Japanese equivalent; an English "yeah" or "lol" must never sit untranslated in the Japanese.
+- Don't invent nuance the source doesn't carry — no やっぱ／やっぱり ("as I expected / I knew it") on a plain statement, no apology that wasn't there, no confirmation beat the source didn't have.
 - Casual especially: use real spoken/texting language — contractions, natural slang, dropped subjects, and sentence-final particles (ね／よ／じゃん／っしょ). Render net-slang and abbreviations idiomatically (e.g. 草 → "lol", りょ → "got it"), never literally.
 - Person reference: Japanese usually omits both "I" and "you" — drop them whenever context makes them clear. Avoid inserting second-person pronouns; お前／あなた／きみ read as rough, distant, or unnatural in normal texting, where people omit "you" or just use the person's bare name (add さん／くん／ちゃん only when the relationship or context specifically calls for it). Don't add first-person 私／僕／俺 unless the source emphasizes it, and keep whichever you pick consistent.
 - Gendered speech: default to gender-neutral casual unless the source signals the speaker's gender. Avoid strongly feminine sentence-final particles (〜わ／〜だわ／〜かしら／〜のよ) and exaggerated masculine ones (〜だぜ／〜だぞ); prefer neutral 〜よ／〜ね／〜な or plain form (で十分だよ, not で十分だわ).
@@ -97,7 +106,7 @@ Get the Japanese grammar right — these mistakes break naturalness:
 - Transitive vs intransitive pairs (開ける/開く, 出す/出る, 入れる/入る, 消す/消える): intransitive when the subject undergoes the action, transitive when it causes it.
 - Particles: は marks the topic, が marks the subject; を/に/で and the が that pairs with 好き・できる・ほしい・わかる must be correct.
 - Request/command forms: for casual requests or invitations use ～てよ, ～なよ, or ～な. The verb 来る becomes 来て・来な・来いよ — never 来よ or 来よよ: 来よ (こよ) is a stiff classical/literary imperative and is wrong in casual texting. する becomes して・しな. Never attach よ directly to a bare verb stem.
-- Keep the register uniform — no です／ます leaking into casual, no plain form leaking into polite.
+- Keep the register uniform — no です／ます leaking into casual, no plain form leaking into polite, and don't blend a rough-casual pronoun like 俺ら with っす polite-slang (バイト敬語); pick one casual register and hold it.
 
 ${PROMPT_OUTPUT_FORMAT}`;
 }
