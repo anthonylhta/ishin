@@ -17,6 +17,8 @@
 /evals/scorecards
 # failure-miner proposals — candidate golden cases awaiting human review
 /agent/proposals
+# failure-miner watermark — local "how far we've checked" state, per-machine
+/agent/.mine-state.json
 
 # next.js
 /.next/
