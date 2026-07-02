@@ -56,17 +56,64 @@ export function detectToEnglish(text: string): boolean {
   return JAPANESE_SCRIPT.test(text);
 }
 
-// Translation models are chosen per direction (ADR 0042). EN→JP — the primary
-// casual register — stays on Haiku, which the eval shows is fast, cheap, and
-// already strong there (and which Sonnet slightly regresses). JP→EN uses the
-// stronger Sonnet, which the eval shows fixes comprehension errors Haiku makes
-// even with the hardened prompt (聞く = attend, particle/idiom reading). Both
-// route.ts and the eval runner select via this one helper so they never drift.
+// Translation models are chosen per direction (ADR 0042; JP→EN moved to Sonnet 5
+// in ADR 0043). EN→JP — the primary casual register — stays on Haiku, which the
+// eval shows is fast, cheap, and already strong there (and which Sonnet slightly
+// regresses). JP→EN uses the stronger Sonnet, which the eval shows fixes
+// comprehension errors Haiku makes even with the hardened prompt (聞く = attend,
+// particle/idiom reading). Both route.ts and the eval runner select via this one
+// helper so they never drift.
 export const TRANSLATE_MODEL_EN_TO_JP = 'claude-haiku-4-5-20251001';
-export const TRANSLATE_MODEL_JP_TO_EN = 'claude-sonnet-4-6';
+export const TRANSLATE_MODEL_JP_TO_EN = 'claude-sonnet-5';
 
 export function translateModelFor(toEnglish: boolean): string {
   return toEnglish ? TRANSLATE_MODEL_JP_TO_EN : TRANSLATE_MODEL_EN_TO_JP;
+}
+
+// Request params depend on the model, not the direction (ADR 0043). Sonnet 5
+// (and the Opus 4.7+/Fable families) reject non-default sampling params —
+// sending `temperature` returns a 400 — and default adaptive thinking ON, which
+// we don't want for a fast single-pass translation. So for those we omit
+// temperature and disable thinking — except Fable 5 / Mythos 5, which reject an
+// explicit disable (400), so we omit thinking for them too — and give max_tokens
+// extra headroom for the heavier tokenizer. Older models (Haiku 4.5, Sonnet 4.6) keep the tuned
+// temperature 0.5. Keyed on the model string so it stays correct for both the
+// per-direction default and an eval EVAL_TRANSLATE_MODEL override; shared by
+// route.ts + the eval runner so they can't drift.
+export interface TranslateParams {
+  model: string;
+  max_tokens: number;
+  temperature?: number;
+  thinking?: { type: 'disabled' };
+}
+
+function modelRejectsSampling(model: string): boolean {
+  return (
+    model.startsWith('claude-sonnet-5') ||
+    model.startsWith('claude-opus-4-7') ||
+    model.startsWith('claude-opus-4-8') ||
+    model.startsWith('claude-fable-5') ||
+    model.startsWith('claude-mythos-5')
+  );
+}
+
+// Fable 5 / Mythos 5 keep thinking always on and reject an explicit
+// `thinking: {type:'disabled'}` (400) — for them the field must be omitted. Every
+// other sampling-rejecting model (Sonnet 5, Opus 4.7/4.8) accepts disabled, which
+// is what we want for a fast single-pass translation.
+function modelForbidsDisablingThinking(model: string): boolean {
+  return (
+    model.startsWith('claude-fable-5') || model.startsWith('claude-mythos-5')
+  );
+}
+
+export function translateParamsFor(model: string): TranslateParams {
+  if (!modelRejectsSampling(model)) {
+    return { model, max_tokens: 2048, temperature: 0.5 };
+  }
+  return modelForbidsDisablingThinking(model)
+    ? { model, max_tokens: 3072 }
+    : { model, max_tokens: 3072, thinking: { type: 'disabled' } };
 }
 
 const PROMPT_INTRO = `You are a native-level Japanese ⇄ English translator. Your output must sound like a real native speaker actually wrote it — natural, idiomatic, and never literal or robotic.
