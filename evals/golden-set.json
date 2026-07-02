@@ -301,5 +301,75 @@
     "tone": "casual",
     "watch_for": "Direction JP→EN. あんそにー is the name 'Anthony', not 'Anson'. Keep the embedded English (noodles) and transliterate the name correctly.",
     "regression_of": "mined from production 2026-05-30"
+  },
+  {
+    "id": "jp-en-te-kaitearu-reported",
+    "input": "引かれる数字だけ見るとオーストラリアだけど収入からの割合で見ると日本の方が高く引かれることが多いて書いてある",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 〜て書いてある marks the whole claim as something the speaker read ('it says that ...') — frame the sentence as reported from a source, not a dangling 'written there' tacked onto the end.",
+    "regression_of": "mined from production 2026-06-25"
+  },
+  {
+    "id": "collocation-kyuuka-iku",
+    "input": "u are actually a little rich lol for living in tokyo i think, it makes sense why u alway celine and go on holiday",
+    "tone": "casual",
+    "watch_for": "'go on holiday' needs a natural collocation — 旅行(に)行く or 休暇を取る, never 休暇(に)行く: natives don't pair the time-off noun 休暇 with 行く. The source's garbled 'u alway celine' fragment may be rendered any reasonable way (e.g. セリーヌ買ったり) — don't penalize that clause; only the holiday collocation is under test.",
+    "regression_of": "mined from production 2026-06-25"
+  },
+  {
+    "id": "jp-en-tara-discovery",
+    "input": "ね、シードレスの葡萄食べたくて選んだらオーストラリア産だった笑",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 選んだら…だった is a discovery ('when I picked them out ... they turned out to be'), not a causal chain — don't restructure it as 'I picked X because Y'. Keep the turned-out-to-be surprise beat.",
+    "regression_of": "mined from production 2026-06-27"
+  },
+  {
+    "id": "slang-cooked-predictive",
+    "input": "first match against brazil is cooked",
+    "tone": "casual",
+    "watch_for": "Keep 'first' (初戦 / 最初の試合) and render 'is cooked' as predictive doom about the upcoming match (詰んだ／終わる-style outlook), not past-tense 終わった as if the match already happened.",
+    "regression_of": "mined from production 2026-06-27"
+  },
+  {
+    "id": "jp-en-no-invented-laugh",
+    "input": "脱水で血栓できて飛ぶんじゃないかって怖かったけど生きてる",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. The source has no 笑/w — don't append 'lol' or any laugh marker the source doesn't carry. (Idiomatic medical English like 'throw a clot' is fine; the failure is the invented laugh, not the idiom.)",
+    "regression_of": "mined from production 2026-06-29"
+  },
+  {
+    "id": "purpose-clause-not-lets",
+    "input": "watch romance shows so u can meet a ikemen",
+    "tone": "casual",
+    "watch_for": "'so u can meet' is a purpose clause aimed at the listener (出会えるように / 出会えるかも) — not the joint 'let's' volitional 〜しようぜ, which changes who acts, and ぜ adds masculine coding the source doesn't have.",
+    "regression_of": "mined from production 2026-06-30"
+  },
+  {
+    "id": "jp-en-trailing-punctuation",
+    "input": "でもすごい感動した、、\nブラジルの選手の田中碧に対する声掛けがスポーツマンシップすぎた、、",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. Japanese trailing 、、 must become natural English trailing punctuation (… or —), never a literal ',,'. Render 田中碧 in English name order (Ao Tanaka).",
+    "regression_of": "mined from production 2026-06-30"
+  },
+  {
+    "id": "jp-en-emoji-fidelity",
+    "input": "少子化と東京都に感謝✨",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. Keep the source's ✨ and don't invent extra emoji (e.g. 🙌). The wry 'thanks to the declining birthrate and Tokyo' framing should survive without added flourish.",
+    "regression_of": "mined from production 2026-07-02"
+  },
+  {
+    "id": "jp-en-tara-hypothetical",
+    "input": "なんか家ないなら採用通知早めに送りますねって言われたら多分大丈夫！！笑",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. 言われたら is conditional ('if/once that's what I'm told, I'm probably fine') — don't flatten it into an asserted 'they said they'd ...'. The quote 「家ないなら採用通知早めに送りますね」 is spoken TO the speaker about the speaker's own housing.",
+    "regression_of": "mined from production 2026-07-02"
+  },
+  {
+    "id": "jp-en-entry-sheet",
+    "input": "今日は家でエントリーシートの志望動機書いてた",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. エントリーシート is the standardized Japanese new-grad job application form — keep that specificity ('entry sheet' / 'job application form'), not a generic 'personal statement' or 'resume'. Keep the casual diary vibe ('was writing ... at home today'), not stiff report framing like 'Spent today ...'.",
+    "regression_of": "mined from production 2026-06-28"
   }
 ]

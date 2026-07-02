@@ -19,7 +19,7 @@ export function buildJudgePrompt(
 
   return `You are a strict native-speaker translation grader. Judge ONLY the OUTPUT below — do not translate anything yourself.
 
-SOURCE: ${input}
+SOURCE (between the triple quotes, may span multiple lines): """${input}"""
 EXPECTED TARGET: ${targetLang}
 SPECIFICALLY WATCH FOR: ${watchFor}
 

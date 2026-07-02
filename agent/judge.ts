@@ -25,7 +25,7 @@ export function buildMinerPrompt(input: string, tone: ToneId, output: string): s
 
   return `You are a strict native-speaker translation grader reviewing a REAL translation an app produced, to find quality failures worth adding to a regression test set. Judge ONLY the OUTPUT — do not translate anything yourself.
 
-SOURCE (${sourceLang}): ${input}
+SOURCE (${sourceLang}, between the triple quotes, may span multiple lines): """${input}"""
 EXPECTED TARGET: ${targetLang}
 
 OUTPUT TO GRADE:
