@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
     }
 
     const stream = client.messages.stream({
+      // Check stays on Sonnet 4.6 (ADR 0043): temperature 0.3 keeps the binary
+      // ✓/⚠ verdict low-variance, which Sonnet 5 can't do (it rejects non-default
+      // temperature). Revisit before 4.6 deprecates — see the ADR 0043 follow-ups.
       model: 'claude-sonnet-4-6',
       max_tokens: 512,
       temperature: 0.3,

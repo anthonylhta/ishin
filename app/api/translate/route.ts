@@ -8,6 +8,7 @@ import {
   buildSystemPrompt,
   detectToEnglish,
   translateModelFor,
+  translateParamsFor,
   validateTranslationInput,
 } from './utils';
 
@@ -51,11 +52,11 @@ export async function POST(request: NextRequest) {
       : `Translate this English text into Japanese in the "${selectedTone}" register:\n\n"""${text}"""`;
 
     const stream = client.messages.stream({
-      model: translateModelFor(toEnglish),
-      // A maxed-out 2000-char input can exceed 1024 output tokens (JP↔EN both
-      // directions); only generated tokens are billed, so headroom is free.
-      max_tokens: 2048,
-      temperature: 0.5,
+      // Per-direction model + params (ADR 0042/0043): Haiku EN→JP keeps the tuned
+      // temperature 0.5; Sonnet 5 JP→EN omits it (a 400 otherwise) and disables
+      // thinking. A maxed-out 2000-char input can exceed 1024 output tokens, and
+      // only generated tokens are billed, so max_tokens headroom is free.
+      ...translateParamsFor(translateModelFor(toEnglish)),
       system: buildSystemPrompt(selectedTone, toEnglish),
       messages: [
         {

@@ -7,6 +7,7 @@ import {
   buildCheckPrompt,
   detectToEnglish,
   translateModelFor,
+  translateParamsFor,
   validateTranslationInput,
   hits,
   TONES,
@@ -123,11 +124,42 @@ describe('detectToEnglish', () => {
 
 describe('translateModelFor', () => {
   it('uses the stronger Sonnet for JP→EN (comprehension)', () => {
-    expect(translateModelFor(true)).toBe('claude-sonnet-4-6');
+    expect(translateModelFor(true)).toBe('claude-sonnet-5');
   });
 
   it('uses Haiku for EN→JP (the primary casual register)', () => {
     expect(translateModelFor(false)).toBe('claude-haiku-4-5-20251001');
+  });
+});
+
+describe('translateParamsFor', () => {
+  it('omits temperature and disables thinking for Sonnet 5 (rejects sampling params, thinking defaults on)', () => {
+    const p = translateParamsFor('claude-sonnet-5');
+    expect(p.temperature).toBeUndefined();
+    expect(p.thinking).toEqual({ type: 'disabled' });
+    expect(p.max_tokens).toBe(3072);
+  });
+
+  it('keeps the tuned temperature 0.5 and no thinking field for Haiku 4.5', () => {
+    const p = translateParamsFor('claude-haiku-4-5-20251001');
+    expect(p.temperature).toBe(0.5);
+    expect(p.thinking).toBeUndefined();
+    expect(p.max_tokens).toBe(2048);
+  });
+
+  it('keeps temperature for the Sonnet 4.6 baseline (eval override stays A/B-able)', () => {
+    const p = translateParamsFor('claude-sonnet-4-6');
+    expect(p.temperature).toBe(0.5);
+    expect(p.thinking).toBeUndefined();
+  });
+
+  it('omits temperature AND thinking for Fable 5 / Mythos 5 (they 400 on an explicit disable)', () => {
+    for (const m of ['claude-fable-5', 'claude-mythos-5']) {
+      const p = translateParamsFor(m);
+      expect(p.temperature).toBeUndefined();
+      expect(p.thinking).toBeUndefined();
+      expect(p.max_tokens).toBe(3072);
+    }
   });
 });
 

@@ -12,7 +12,12 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { buildSystemPrompt, detectToEnglish, translateModelFor } from '../app/api/translate/utils';
+import {
+  buildSystemPrompt,
+  detectToEnglish,
+  translateModelFor,
+  translateParamsFor,
+} from '../app/api/translate/utils';
 import { buildJudgePrompt, parseVerdict } from './judge';
 import type { CaseResult, GoldenCase, RunSample, Verdict } from './types';
 
@@ -21,13 +26,15 @@ import type { CaseResult, GoldenCase, RunSample, Verdict } from './types';
 // forces a single model across both directions, to A/B a candidate against the
 // shipping split; the chosen model is printed in the header and recorded in the
 // scorecard.
-const TRANSLATE_MODEL_OVERRIDE = process.env.EVAL_TRANSLATE_MODEL;
+// `|| undefined` so a blank `EVAL_TRANSLATE_MODEL=` (a common shell slip) falls
+// back to the per-direction default instead of becoming an empty model id.
+const TRANSLATE_MODEL_OVERRIDE = process.env.EVAL_TRANSLATE_MODEL || undefined;
 const TRANSLATE_MODEL_LABEL =
-  TRANSLATE_MODEL_OVERRIDE ?? 'per-direction (Haiku EN→JP / Sonnet JP→EN)';
-const TRANSLATE_MAX_TOKENS = 1024;
-const TRANSLATE_TEMPERATURE = 0.5;
+  TRANSLATE_MODEL_OVERRIDE ?? 'per-direction (Haiku EN→JP / Sonnet 5 JP→EN)';
 
-// The grader. A stronger model than the translator, at temperature 0.
+// The grader stays on Sonnet 4.6 at temperature 0 (ADR 0043): temperature 0 is
+// only accepted on pre-Sonnet-5 models, and holding the judge fixed keeps grading
+// deterministic and avoids Sonnet-5-grading-Sonnet-5 self-preference.
 const JUDGE_MODEL = 'claude-sonnet-4-6';
 
 const REPEATS = Math.max(1, Number(process.env.EVAL_REPEATS ?? '1') || 1);
@@ -50,10 +57,9 @@ async function translate(client: Anthropic, c: GoldenCase): Promise<string> {
     ? `Translate this Japanese text into English:\n\n"""${c.input}"""`
     : `Translate this English text into Japanese in the "${c.tone}" register:\n\n"""${c.input}"""`;
 
+  const model = TRANSLATE_MODEL_OVERRIDE ?? translateModelFor(toEnglish);
   const msg = await client.messages.create({
-    model: TRANSLATE_MODEL_OVERRIDE ?? translateModelFor(toEnglish),
-    max_tokens: TRANSLATE_MAX_TOKENS,
-    temperature: TRANSLATE_TEMPERATURE,
+    ...translateParamsFor(model),
     system: buildSystemPrompt(c.tone, toEnglish),
     messages: [{ role: 'user', content: userInstruction }],
   });
