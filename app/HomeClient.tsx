@@ -49,9 +49,6 @@ export default function HomeClient() {
 
   // Signed in -> cloud-backed history. Guest -> ephemeral in-memory (persists nothing).
   const { messages, groupedMessages, addUserMessage, addStreamingMessage, updateStreamingMessage, removeStreamingMessage, finalizeStreamingMessage, clearHistory, deleteMessage, toggleGroup, isLoading: isLoadingHistory } = useCloudStorage();
-  // Latest messages, for the stable pair-delete handler below (depending on
-  // `messages` directly would re-create the callback and defeat ChatMessage's memo).
-  const messagesRef = useRef(messages);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -61,9 +58,6 @@ export default function HomeClient() {
   // change yanked the viewport to the bottom on collapse toggles and on
   // deleting an old message; depending on messages and gating on growth or an
   // active stream scrolls exactly when new content appears at the bottom.
-  // Keep messagesRef current so the (stable) pair-delete handler sees the latest list.
-  useEffect(() => { messagesRef.current = messages; }, [messages]);
-
   const prevMessageCount = useRef(0);
   useEffect(() => {
     const grew = messages.length > prevMessageCount.current;
@@ -136,18 +130,11 @@ export default function HomeClient() {
   };
 
   // Stable identity — flows down to every memoized ChatMessage as onDelete.
-  // An entry is a user input + the assistant response right after it; deleting
-  // either side removes the whole pair.
+  // Deleting either side of an entry removes the whole pair; the pairing lives
+  // in deleteMessage/collectDeleteIds, not here.
   const handleDeleteMessage = useCallback(async (id: string) => {
-    const msgs = messagesRef.current;
-    const idx = msgs.findIndex((m) => m.id === id);
-    const ids = [id];
-    if (idx !== -1) {
-      if (msgs[idx].role === 'assistant' && msgs[idx - 1]?.role === 'user') ids.push(msgs[idx - 1].id);
-      else if (msgs[idx].role === 'user' && msgs[idx + 1]?.role === 'assistant') ids.push(msgs[idx + 1].id);
-    }
     try {
-      await Promise.all(ids.map((i) => deleteMessage(i)));
+      await deleteMessage(id);
     } catch {
       setToastMessage('Failed to delete — please try again');
     }
