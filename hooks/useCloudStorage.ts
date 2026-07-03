@@ -74,6 +74,29 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
   }));
 }
 
+// Which message ids one delete click should remove. An entry is a user input +
+// its assistant response; deleting either side removes the whole pair.
+//
+// A persisted pair shares one record id (`<dbId>_user` / `<dbId>_assistant`),
+// and deleteMessage already removes the DB record plus both bubbles via the
+// `${dbId}_` prefix filter — so a persisted message needs exactly one call.
+// Never pair persisted messages by array position: finalizeStreamingMessage
+// re-appends the saved user message at the tail, so raw order diverges from
+// the rendered (timestamp-sorted) order and the array-adjacent message can
+// belong to a different record (deleting it destroyed that record's data).
+// Guest messages (synthetic temp_/streaming_ ids) are never reordered, so
+// adjacency is the pairing there.
+export function collectDeleteIds(messages: ChatMessage[], id: string): string[] {
+  if (id.endsWith('_user') || id.endsWith('_assistant')) return [id];
+  const idx = messages.findIndex((m) => m.id === id);
+  const ids = [id];
+  if (idx !== -1) {
+    if (messages[idx].role === 'assistant' && messages[idx - 1]?.role === 'user') ids.push(messages[idx - 1].id);
+    else if (messages[idx].role === 'user' && messages[idx + 1]?.role === 'assistant') ids.push(messages[idx + 1].id);
+  }
+  return ids;
+}
+
 export function useCloudStorage() {
   const { isSignedIn } = useUser();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -245,7 +268,12 @@ export function useCloudStorage() {
 
   const deleteMessage = useCallback(async (id: string) => {
     if (!isSignedIn) {
-      setMessages(prev => prev.filter(m => m.id !== id));
+      // Guest pairs share no record id — resolve the pair against the current
+      // list inside the updater, where it can't be stale.
+      setMessages(prev => {
+        const ids = collectDeleteIds(prev, id);
+        return prev.filter(m => !ids.includes(m.id));
+      });
       return;
     }
     const dbId = id.split('_')[0];
