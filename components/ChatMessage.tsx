@@ -7,6 +7,9 @@ import { CopyIcon, CheckIcon, TrashIcon, LightbulbIcon } from '@/components/Icon
 interface Props {
   message: ChatMessageType;
   onDelete?: (id: string) => void;
+  // False while a signed-in message is still saving (synthetic id, no DB
+  // record yet) — deleting it would target a record that doesn't exist.
+  canDelete?: boolean;
 }
 
 // Hiragana, katakana, CJK kanji, half-width katakana — used to pick the serif
@@ -49,7 +52,7 @@ function IconButton({ onClick, label, active, children }: {
 // box on the right, no red) followed by the OUTPUT (the translation — open on the
 // canvas, no bubble, the hero). They render as separate messages; the visual
 // pairing comes from the spacing (tight under the input, loose after the output).
-function ChatMessage({ message, onDelete }: Props) {
+function ChatMessage({ message, onDelete, canDelete }: Props) {
   const [copied, setCopied] = useState(false);
   const isUser = message.role === 'user';
   const isCheck = message.kind === 'check';
@@ -180,7 +183,7 @@ function ChatMessage({ message, onDelete }: Props) {
           <IconButton onClick={handleCopy} label={copied ? 'Copied' : 'Copy'} active={copied}>
             {copied ? <CheckIcon /> : <CopyIcon />}
           </IconButton>
-          {onDelete && (
+          {onDelete && canDelete !== false && (
             <IconButton onClick={() => onDelete(message.id)} label="Delete"><TrashIcon /></IconButton>
           )}
         </div>

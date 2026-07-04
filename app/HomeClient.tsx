@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useUser, SignInButton, UserButton } from '@clerk/nextjs';
-import { useCloudStorage } from '@/hooks/useCloudStorage';
+import { useCloudStorage, isPersistedId } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
 import Toast from '@/components/Toast';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -128,6 +128,14 @@ export default function HomeClient() {
       setToastMessage('Failed to clear history — please try again');
     }
   };
+
+  // Hide delete until a signed-in message is backed by a DB record — deleting
+  // one that's still saving would target a record that doesn't exist yet.
+  // Guests keep delete on synthetic ids (nothing is ever persisted for them).
+  const isMessageDeletable = useCallback(
+    (id: string) => !isSignedIn || isPersistedId(id),
+    [isSignedIn]
+  );
 
   // Stable identity — flows down to every memoized ChatMessage as onDelete.
   // Deleting either side of an entry removes the whole pair; the pairing lives
@@ -268,6 +276,11 @@ export default function HomeClient() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Never submit mid-IME-composition — confirming a kanji candidate with
+    // Enter must not send the half-typed message. Safari fires the confirming
+    // Enter after compositionend with isComposing already false but keyCode
+    // still 229, so check both.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (checkMode) handleCheck();
@@ -471,6 +484,7 @@ export default function HomeClient() {
                 collapsed={group.collapsed}
                 onToggle={() => toggleGroup(group.title)}
                 onDeleteMessage={handleDeleteMessage}
+                isMessageDeletable={isMessageDeletable}
               />
             ))
           )}
