@@ -45,7 +45,9 @@ export async function POST(request: NextRequest) {
       // ✓/⚠ verdict low-variance, which Sonnet 5 can't do (it rejects non-default
       // temperature). Revisit before 4.6 deprecates — see the ADR 0043 follow-ups.
       model: 'claude-sonnet-4-6',
-      max_tokens: 512,
+      // Sized for the shared 2000-char input cap: a long ⚠ verdict (explanation
+      // + full-length Try: rewrite) overflowed 512 and streamed out truncated.
+      max_tokens: 2048,
       temperature: 0.3,
       system: buildCheckPrompt(selectedTone),
       messages: [
