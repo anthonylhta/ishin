@@ -117,12 +117,20 @@ export function useCloudStorage() {
     [messages, collapsedVersion], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  // Bumped on sign-out (and by any newer load) so a slow in-flight GET can't
+  // repopulate history after the messages were cleared.
+  const loadGeneration = useRef(0);
+
   const loadMessages = useCallback(async () => {
     if (!isSignedIn) return;
+    const gen = ++loadGeneration.current;
     setIsLoading(true);
     try {
       const response = await fetch('/api/translations');
       const result = await response.json();
+      // Stale: the user signed out (or a newer load started) while this
+      // request was in flight — its data must not clobber the current state.
+      if (gen !== loadGeneration.current) return;
       if (result.success && result.data) {
         const loadedMessages: ChatMessage[] = [];
         result.data.forEach((record: { id: string; user_text: string; assistant_text: string; tone: string; explanation: string; created_at: string; message_type?: string }) => {
@@ -150,7 +158,7 @@ export function useCloudStorage() {
     } catch (err) {
       console.error('Failed to load messages:', err);
     } finally {
-      setIsLoading(false);
+      if (gen === loadGeneration.current) setIsLoading(false);
     }
   }, [isSignedIn]);
 
@@ -166,6 +174,7 @@ export function useCloudStorage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadMessages();
     } else {
+      loadGeneration.current++; // invalidate any in-flight history load
       if (wasSignedIn.current) setMessages([]);
       wasSignedIn.current = false;
       setIsLoading(false);
