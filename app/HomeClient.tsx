@@ -268,6 +268,11 @@ export default function HomeClient() {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    // Never submit mid-IME-composition — confirming a kanji candidate with
+    // Enter must not send the half-typed message. Safari fires the confirming
+    // Enter after compositionend with isComposing already false but keyCode
+    // still 229, so check both.
+    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (checkMode) handleCheck();
