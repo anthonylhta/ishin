@@ -113,7 +113,14 @@ export default function HomeClient() {
 
   const selectTone = (id: ToneId) => {
     setSelectedTone(id);
-    localStorage.setItem('selectedTone', id);
+    // setItem throws in private windows / at quota. The tone still applies for
+    // this session, and the throw must not escape: the dropdown option closes
+    // the menu AFTER this call, so an exception left it stuck open.
+    try {
+      localStorage.setItem('selectedTone', id);
+    } catch {
+      // Tone just won't persist across reloads.
+    }
   };
 
   // Stable identity — Toast's auto-hide effect depends on onHide, so an inline
