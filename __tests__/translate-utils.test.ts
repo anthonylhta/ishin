@@ -339,6 +339,13 @@ describe('validateTranslationInput', () => {
     expect(validateTranslationInput('hello', null)?.status).toBe(400);
   });
 
+  it.each(['toString', 'constructor', 'hasOwnProperty'])(
+    'rejects the inherited object key "%s" as a tone',
+    (tone) => {
+      expect(validateTranslationInput('hello', tone)?.status).toBe(400);
+    }
+  );
+
   it.each(Object.keys(TONES))('accepts valid tone "%s"', (tone) => {
     expect(validateTranslationInput('hello', tone)).toBeNull();
   });

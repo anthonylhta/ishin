@@ -102,8 +102,14 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
 // belong to a different record (deleting it destroyed that record's data).
 // Guest messages (synthetic temp_/streaming_ ids) are never reordered, so
 // adjacency is the pairing there.
+// True once the message is backed by a DB record (`<dbId>_user` / `<dbId>_assistant`);
+// synthetic ids (`temp_*`, `streaming_*`) exist only until the save resolves.
+export function isPersistedId(id: string): boolean {
+  return id.endsWith('_user') || id.endsWith('_assistant');
+}
+
 export function collectDeleteIds(messages: ChatMessage[], id: string): string[] {
-  if (id.endsWith('_user') || id.endsWith('_assistant')) return [id];
+  if (isPersistedId(id)) return [id];
   const idx = messages.findIndex((m) => m.id === id);
   const ids = [id];
   if (idx !== -1) {
@@ -127,12 +133,20 @@ export function useCloudStorage() {
     [messages, collapsedVersion], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  // Bumped on sign-out (and by any newer load) so a slow in-flight GET can't
+  // repopulate history after the messages were cleared.
+  const loadGeneration = useRef(0);
+
   const loadMessages = useCallback(async () => {
     if (!isSignedIn) return;
+    const gen = ++loadGeneration.current;
     setIsLoading(true);
     try {
       const response = await fetch('/api/translations');
       const result = await response.json();
+      // Stale: the user signed out (or a newer load started) while this
+      // request was in flight — its data must not clobber the current state.
+      if (gen !== loadGeneration.current) return;
       if (result.success && result.data) {
         const loadedMessages: ChatMessage[] = [];
         result.data.forEach((record: { id: string; user_text: string; assistant_text: string; tone: string; explanation: string; created_at: string; message_type?: string }) => {
@@ -160,7 +174,7 @@ export function useCloudStorage() {
     } catch (err) {
       console.error('Failed to load messages:', err);
     } finally {
-      setIsLoading(false);
+      if (gen === loadGeneration.current) setIsLoading(false);
     }
   }, [isSignedIn]);
 
@@ -176,6 +190,7 @@ export function useCloudStorage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadMessages();
     } else {
+      loadGeneration.current++; // invalidate any in-flight history load
       if (wasSignedIn.current) setMessages([]);
       wasSignedIn.current = false;
       setIsLoading(false);
@@ -292,6 +307,10 @@ export function useCloudStorage() {
       });
       return;
     }
+    // Signed in but the id is still synthetic: the save POST hasn't resolved,
+    // so there is no DB record to delete yet (splitting would yield a bogus
+    // "temp"/"streaming" id). The UI hides delete for these; this covers the race.
+    if (!isPersistedId(id)) throw new Error('Still saving — try again in a moment');
     const dbId = id.split('_')[0];
     const response = await fetch(`/api/translations?id=${dbId}`, { method: 'DELETE' });
     const result = await response.json();
