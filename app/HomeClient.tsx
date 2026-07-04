@@ -320,8 +320,12 @@ export default function HomeClient() {
           </div>
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
             {groupedMessages.length > 0 && (
+              // Disabled while a translation/check is in flight: clearing
+              // mid-stream doesn't cancel the finalize, whose save would
+              // re-append a ghost of the just-cleared conversation.
               <button
                 onClick={() => setShowClearModal(true)}
+                disabled={isLoading}
                 style={{
                   background: 'none',
                   border: '1px solid var(--border)',
@@ -329,7 +333,8 @@ export default function HomeClient() {
                   padding: '7px 14px',
                   fontSize: '0.72rem',
                   color: 'var(--text-secondary)',
-                  cursor: 'pointer',
+                  cursor: isLoading ? 'default' : 'pointer',
+                  opacity: isLoading ? 0.5 : 1,
                   whiteSpace: 'nowrap',
                 }}
               >
