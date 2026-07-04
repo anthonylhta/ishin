@@ -4,10 +4,24 @@
 // auth-driven and force-dynamic, so a cached page could show the wrong state)
 // and never touches /api (translations stream and must hit the network).
 
-const VERSION = 'v1';
+const VERSION = 'v2'; // v2: flush ~89 deploys of accumulated hashed assets
 const STATIC_CACHE = `tt-static-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE = [OFFLINE_URL, '/icon-192.png', '/icon-512.png'];
+
+// Hashed build assets under /_next/static/ accumulate forever within one cache
+// version — every deploy mints new filenames and the old ones are never
+// requested again — so cap them, evicting oldest-first (CacheStorage keys are
+// in insertion order). Other static assets (icons, images) are naturally
+// bounded and left alone, which also keeps the precache safe from eviction.
+const MAX_HASHED_ENTRIES = 80;
+
+async function trimHashedAssets(cache) {
+  const keys = await cache.keys();
+  const hashed = keys.filter((req) => new URL(req.url).pathname.startsWith('/_next/static/'));
+  if (hashed.length <= MAX_HASHED_ENTRIES) return;
+  await Promise.all(hashed.slice(0, hashed.length - MAX_HASHED_ENTRIES).map((req) => cache.delete(req)));
+}
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -54,7 +68,9 @@ self.addEventListener('fetch', (event) => {
         const cached = await cache.match(request);
         const network = fetch(request)
           .then((res) => {
-            if (res && res.ok) cache.put(request, res.clone());
+            // Trim is best-effort fire-and-forget: the response must not wait
+            // on cache housekeeping, and a missed trim is retried next fetch.
+            if (res && res.ok) cache.put(request, res.clone()).then(() => trimHashedAssets(cache));
             return res;
           })
           .catch(() => cached);
