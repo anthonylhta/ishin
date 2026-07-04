@@ -215,7 +215,9 @@ export function validateTranslationInput(
   if (text.length > MAX_INPUT_CHARS) {
     return { error: `Text too long (max ${MAX_INPUT_CHARS} characters)`, status: 400 };
   }
-  if (!selectedTone || typeof selectedTone !== 'string' || !(selectedTone in TONES)) {
+  // Object.hasOwn, not `in` — `in` walks the prototype chain, so inherited keys
+  // like "toString" would validate and then interpolate a function into the prompt.
+  if (!selectedTone || typeof selectedTone !== 'string' || !Object.hasOwn(TONES, selectedTone)) {
     return { error: 'Invalid tone', status: 400 };
   }
   return null;
