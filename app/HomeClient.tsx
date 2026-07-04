@@ -477,12 +477,12 @@ export default function HomeClient() {
           ) : (
             groupedMessages.map((group) => (
               <DateGroup
-                key={group.title}
+                key={group.key}
                 id={`group-${group.title.toLowerCase().replace(/\s+/g, '-')}`}
                 title={group.title}
                 messages={group.messages}
                 collapsed={group.collapsed}
-                onToggle={() => toggleGroup(group.title)}
+                onToggle={() => toggleGroup(group.key)}
                 onDeleteMessage={handleDeleteMessage}
                 isMessageDeletable={isMessageDeletable}
               />

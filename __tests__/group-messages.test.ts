@@ -25,6 +25,11 @@ function noon(d: Date): number {
   return n.getTime();
 }
 
+// Mirrors the implementation's stable local-date group key
+function dayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 describe('groupMessagesByDate', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -33,6 +38,7 @@ describe('groupMessagesByDate', () => {
 
   afterEach(() => {
     vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 
   it('returns empty array for no messages', () => {
@@ -101,6 +107,34 @@ describe('groupMessagesByDate', () => {
     // In node environment, window is undefined so collapsed state is always {}
     const groups = groupMessagesByDate([makeMsg('1', noon(today))]);
     expect(groups[0].collapsed).toBe(false);
+  });
+
+  // Collapse state is keyed by a STABLE key, not the rolling title —
+  // collapsing "Today" must not hide a different day's messages tomorrow.
+  it('keys Today/Yesterday groups by their calendar date', () => {
+    const groups = groupMessagesByDate([
+      makeMsg('a', noon(today)),
+      makeMsg('b', noon(yesterday)),
+    ]);
+    expect(groups.map(g => g.key)).toEqual([dayKey(yesterday), dayKey(today)]);
+  });
+
+  it('keys the Older bucket with a single stable key', () => {
+    const groups = groupMessagesByDate([makeMsg('1', noon(older))]);
+    expect(groups[0].key).toBe('older');
+  });
+
+  it('reads collapse state by the stable key and ignores legacy title keys', () => {
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('localStorage', {
+      getItem: () => JSON.stringify({ [dayKey(today)]: true, Yesterday: true }),
+    });
+    const groups = groupMessagesByDate([
+      makeMsg('a', noon(today)),
+      makeMsg('b', noon(yesterday)),
+    ]);
+    expect(groups.find(g => g.title === 'Today')?.collapsed).toBe(true);
+    expect(groups.find(g => g.title === 'Yesterday')?.collapsed).toBe(false);
   });
 
   it('includes all messages across multiple groups without loss', () => {
