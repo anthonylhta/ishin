@@ -25,8 +25,14 @@ function readCollapsedGroups(): Record<string, boolean> {
   }
 }
 
+// Local calendar date, e.g. "2026-07-04" — NOT toISOString(), which shifts the
+// day across the UTC boundary for evening timestamps.
+function localDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function groupMessagesByDate(messages: ChatMessage[]) {
-  const groups: { title: string; messages: ChatMessage[]; collapsed?: boolean }[] = [];
+  const groups: { title: string; key: string; messages: ChatMessage[]; collapsed?: boolean }[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -36,7 +42,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
   const thisWeekStart = new Date(today);
   thisWeekStart.setDate(today.getDate() - today.getDay());
 
-  let currentGroup: { title: string; messages: ChatMessage[] } | null = null;
+  let currentGroup: { title: string; key: string; messages: ChatMessage[] } | null = null;
 
   const sorted = [...messages].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -44,21 +50,31 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
     const msgDate = new Date(msg.timestamp);
     msgDate.setHours(0, 0, 0, 0);
 
+    // Titles roll daily ("Today" names a different day tomorrow), so collapse
+    // state keyed by title leaked across days — collapsing Today hid tomorrow's
+    // fresh messages too. The key is stable instead: the messages' own calendar
+    // date for Today/Yesterday (collapse follows the messages, not the slot),
+    // the week-start date for This Week, and a single bucket for Older.
     let groupTitle = '';
+    let groupKey = '';
 
     if (msgDate.getTime() === today.getTime()) {
       groupTitle = 'Today';
+      groupKey = localDayKey(msgDate);
     } else if (msgDate.getTime() === yesterday.getTime()) {
       groupTitle = 'Yesterday';
+      groupKey = localDayKey(msgDate);
     } else if (msgDate >= thisWeekStart) {
       groupTitle = 'This Week';
+      groupKey = `week-${localDayKey(thisWeekStart)}`;
     } else {
       groupTitle = 'Older';
+      groupKey = 'older';
     }
 
     if (!currentGroup || currentGroup.title !== groupTitle) {
       if (currentGroup) groups.push(currentGroup);
-      currentGroup = { title: groupTitle, messages: [] };
+      currentGroup = { title: groupTitle, key: groupKey, messages: [] };
     }
     currentGroup.messages.push(msg);
   }
@@ -70,7 +86,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
 
   return groups.map(group => ({
     ...group,
-    collapsed: collapsedStates[group.title] || false,
+    collapsed: collapsedStates[group.key] || false,
   }));
 }
 
@@ -248,9 +264,9 @@ export function useCloudStorage() {
     setMessages(prev => prev.filter(m => m.id !== id));
   }, []);
 
-  const toggleGroup = useCallback((groupTitle: string) => {
+  const toggleGroup = useCallback((groupKey: string) => {
     const collapsedStates = readCollapsedGroups();
-    collapsedStates[groupTitle] = !collapsedStates[groupTitle];
+    collapsedStates[groupKey] = !collapsedStates[groupKey];
     localStorage.setItem('collapsed_groups', JSON.stringify(collapsedStates));
     setCollapsedVersion(v => v + 1);
   }, []);
