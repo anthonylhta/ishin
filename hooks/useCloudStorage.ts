@@ -25,8 +25,14 @@ function readCollapsedGroups(): Record<string, boolean> {
   }
 }
 
+// Local calendar date, e.g. "2026-07-04" — NOT toISOString(), which shifts the
+// day across the UTC boundary for evening timestamps.
+function localDayKey(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export function groupMessagesByDate(messages: ChatMessage[]) {
-  const groups: { title: string; messages: ChatMessage[]; collapsed?: boolean }[] = [];
+  const groups: { title: string; key: string; messages: ChatMessage[]; collapsed?: boolean }[] = [];
   const today = new Date();
   today.setHours(0, 0, 0, 0);
 
@@ -36,7 +42,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
   const thisWeekStart = new Date(today);
   thisWeekStart.setDate(today.getDate() - today.getDay());
 
-  let currentGroup: { title: string; messages: ChatMessage[] } | null = null;
+  let currentGroup: { title: string; key: string; messages: ChatMessage[] } | null = null;
 
   const sorted = [...messages].sort((a, b) => a.timestamp - b.timestamp);
 
@@ -44,21 +50,31 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
     const msgDate = new Date(msg.timestamp);
     msgDate.setHours(0, 0, 0, 0);
 
+    // Titles roll daily ("Today" names a different day tomorrow), so collapse
+    // state keyed by title leaked across days — collapsing Today hid tomorrow's
+    // fresh messages too. The key is stable instead: the messages' own calendar
+    // date for Today/Yesterday (collapse follows the messages, not the slot),
+    // the week-start date for This Week, and a single bucket for Older.
     let groupTitle = '';
+    let groupKey = '';
 
     if (msgDate.getTime() === today.getTime()) {
       groupTitle = 'Today';
+      groupKey = localDayKey(msgDate);
     } else if (msgDate.getTime() === yesterday.getTime()) {
       groupTitle = 'Yesterday';
+      groupKey = localDayKey(msgDate);
     } else if (msgDate >= thisWeekStart) {
       groupTitle = 'This Week';
+      groupKey = `week-${localDayKey(thisWeekStart)}`;
     } else {
       groupTitle = 'Older';
+      groupKey = 'older';
     }
 
     if (!currentGroup || currentGroup.title !== groupTitle) {
       if (currentGroup) groups.push(currentGroup);
-      currentGroup = { title: groupTitle, messages: [] };
+      currentGroup = { title: groupTitle, key: groupKey, messages: [] };
     }
     currentGroup.messages.push(msg);
   }
@@ -70,7 +86,7 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
 
   return groups.map(group => ({
     ...group,
-    collapsed: collapsedStates[group.title] || false,
+    collapsed: collapsedStates[group.key] || false,
   }));
 }
 
@@ -86,8 +102,14 @@ export function groupMessagesByDate(messages: ChatMessage[]) {
 // belong to a different record (deleting it destroyed that record's data).
 // Guest messages (synthetic temp_/streaming_ ids) are never reordered, so
 // adjacency is the pairing there.
+// True once the message is backed by a DB record (`<dbId>_user` / `<dbId>_assistant`);
+// synthetic ids (`temp_*`, `streaming_*`) exist only until the save resolves.
+export function isPersistedId(id: string): boolean {
+  return id.endsWith('_user') || id.endsWith('_assistant');
+}
+
 export function collectDeleteIds(messages: ChatMessage[], id: string): string[] {
-  if (id.endsWith('_user') || id.endsWith('_assistant')) return [id];
+  if (isPersistedId(id)) return [id];
   const idx = messages.findIndex((m) => m.id === id);
   const ids = [id];
   if (idx !== -1) {
@@ -111,12 +133,20 @@ export function useCloudStorage() {
     [messages, collapsedVersion], // eslint-disable-line react-hooks/exhaustive-deps
   );
 
+  // Bumped on sign-out (and by any newer load) so a slow in-flight GET can't
+  // repopulate history after the messages were cleared.
+  const loadGeneration = useRef(0);
+
   const loadMessages = useCallback(async () => {
     if (!isSignedIn) return;
+    const gen = ++loadGeneration.current;
     setIsLoading(true);
     try {
       const response = await fetch('/api/translations');
       const result = await response.json();
+      // Stale: the user signed out (or a newer load started) while this
+      // request was in flight — its data must not clobber the current state.
+      if (gen !== loadGeneration.current) return;
       if (result.success && result.data) {
         const loadedMessages: ChatMessage[] = [];
         result.data.forEach((record: { id: string; user_text: string; assistant_text: string; tone: string; explanation: string; created_at: string; message_type?: string }) => {
@@ -144,7 +174,7 @@ export function useCloudStorage() {
     } catch (err) {
       console.error('Failed to load messages:', err);
     } finally {
-      setIsLoading(false);
+      if (gen === loadGeneration.current) setIsLoading(false);
     }
   }, [isSignedIn]);
 
@@ -160,6 +190,7 @@ export function useCloudStorage() {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       loadMessages();
     } else {
+      loadGeneration.current++; // invalidate any in-flight history load
       if (wasSignedIn.current) setMessages([]);
       wasSignedIn.current = false;
       setIsLoading(false);
@@ -248,9 +279,9 @@ export function useCloudStorage() {
     setMessages(prev => prev.filter(m => m.id !== id));
   }, []);
 
-  const toggleGroup = useCallback((groupTitle: string) => {
+  const toggleGroup = useCallback((groupKey: string) => {
     const collapsedStates = readCollapsedGroups();
-    collapsedStates[groupTitle] = !collapsedStates[groupTitle];
+    collapsedStates[groupKey] = !collapsedStates[groupKey];
     localStorage.setItem('collapsed_groups', JSON.stringify(collapsedStates));
     setCollapsedVersion(v => v + 1);
   }, []);
@@ -276,6 +307,10 @@ export function useCloudStorage() {
       });
       return;
     }
+    // Signed in but the id is still synthetic: the save POST hasn't resolved,
+    // so there is no DB record to delete yet (splitting would yield a bogus
+    // "temp"/"streaming" id). The UI hides delete for these; this covers the race.
+    if (!isPersistedId(id)) throw new Error('Still saving — try again in a moment');
     const dbId = id.split('_')[0];
     const response = await fetch(`/api/translations?id=${dbId}`, { method: 'DELETE' });
     const result = await response.json();
