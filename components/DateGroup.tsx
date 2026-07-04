@@ -11,9 +11,10 @@ interface Props {
   collapsed: boolean;
   onToggle: () => void;
   onDeleteMessage: (id: string) => void;
+  isMessageDeletable: (id: string) => boolean;
 }
 
-export default function DateGroup({ id, title, messages, collapsed, onToggle, onDeleteMessage }: Props) {
+export default function DateGroup({ id, title, messages, collapsed, onToggle, onDeleteMessage, isMessageDeletable }: Props) {
   return (
     <div id={id} style={{ marginBottom: collapsed ? '20px' : 0 }}>
       {/* Quiet centered date divider — recedes as chrome, not content. Clickable
@@ -52,7 +53,7 @@ export default function DateGroup({ id, title, messages, collapsed, onToggle, on
       {!collapsed && (
         <div>
           {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} onDelete={onDeleteMessage} />
+            <ChatMessage key={message.id} message={message} onDelete={onDeleteMessage} canDelete={isMessageDeletable(message.id)} />
           ))}
         </div>
       )}

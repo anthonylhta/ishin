@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { collectDeleteIds, ChatMessage } from '../hooks/useCloudStorage';
+import { collectDeleteIds, isPersistedId, ChatMessage } from '../hooks/useCloudStorage';
 
 function makeMsg(id: string, role: 'user' | 'assistant', ts: number): ChatMessage {
   return { id, role, text: 'hi', timestamp: ts };
@@ -61,5 +61,17 @@ describe('collectDeleteIds', () => {
 
   it('returns just the id when the message is not in the list', () => {
     expect(collectDeleteIds([], 'temp_100')).toEqual(['temp_100']);
+  });
+});
+
+describe('isPersistedId', () => {
+  it('is true for record-backed ids', () => {
+    expect(isPersistedId('42_user')).toBe(true);
+    expect(isPersistedId('42_assistant')).toBe(true);
+  });
+
+  it('is false for synthetic pre-save ids', () => {
+    expect(isPersistedId('temp_1700000000000')).toBe(false);
+    expect(isPersistedId('streaming_1700000000000')).toBe(false);
   });
 });
