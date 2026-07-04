@@ -1,13 +1,14 @@
 name: Failure-miner
 
 # Autonomous quality agent: reviews recent production translations with Claude and
-# proposes new golden-set regression cases for the likely failures. Scheduled +
-# on-demand — NOT part of per-commit CI (it calls the paid API and is
-# non-deterministic, same reasoning as the eval harness).
+# proposes new golden-set regression cases for the likely failures. On-demand
+# only — NOT scheduled and NOT part of per-commit CI. The watermark that makes
+# mining incremental (agent/.mine-state.json) is local and gitignored, so an
+# ephemeral runner always starts from scratch: a scheduled run re-judged (and
+# re-paid for) the same oldest 50 rows every week and never reached newer ones.
+# The recurring mine runs locally on the subscription transport instead.
 
 on:
-  schedule:
-    - cron: "0 8 * * 1" # 08:00 UTC every Monday
   workflow_dispatch: # run on demand from the Actions tab
     inputs:
       limit:
