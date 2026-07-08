@@ -371,5 +371,26 @@
     "tone": "casual",
     "watch_for": "Direction JP→EN. エントリーシート is the standardized Japanese new-grad job application form — keep that specificity ('entry sheet' / 'job application form'), not a generic 'personal statement' or 'resume'. Keep the casual diary vibe ('was writing ... at home today'), not stiff report framing like 'Spent today ...'.",
     "regression_of": "mined from production 2026-06-28"
+  },
+  {
+    "id": "brand-slang-maccas",
+    "input": "i hate how all the fast food places arent 24 hours apart from maccas",
+    "tone": "casual",
+    "watch_for": "'maccas' is slang for McDonald's — マック (or マクド), never マックス ('Max'). 'apart from maccas' means except McDonald's (マック以外), so McDonald's IS the one open 24 hours — don't flip the exception.",
+    "regression_of": "mined from production 2026-07-02"
+  },
+  {
+    "id": "sentiment-flip-hate",
+    "input": "i hate how all the fast food places around my place arent 24 hours apart from maccas",
+    "tone": "casual",
+    "watch_for": "'i hate how' is annoyance — keep the negative sentiment (マジ嫌だ／ムカつく-style), never amused ウケる, which flips the speaker's feeling into finding it funny. Also 'maccas' → マック, not マックス.",
+    "regression_of": "mined from production 2026-07-02"
+  },
+  {
+    "id": "jp-en-zero-stakes-poker",
+    "input": "一昨日お金かけないポーカー行ったんだけどボロ負けだったからルーレットで地道に頑張る( ᵒ̴̶̷̥́ωᵒ̴̶̷̣̥̀ )",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. お金かけないポーカー is poker with no money on the line ('poker without betting money' / 'not for money') — never 'low-stakes', which implies real stakes and kills the contrast with grinding at real-money roulette. Keep the kaomoji ( ᵒ̴̶̷̥́ωᵒ̴̶̷̣̥̀ ) as-is.",
+    "regression_of": "mined from production 2026-07-08"
   }
 ]
