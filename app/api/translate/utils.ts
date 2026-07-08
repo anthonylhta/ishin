@@ -138,7 +138,7 @@ Read the Japanese correctly — these comprehension slips silently change the me
 - Let context fix word sense, not the first dictionary gloss: 焼く is "tan/sunbathe" in a sun/skin context (and 痛い there is sunburn), but "grill/bake" with food; 傷む for food is "go bad/spoil", not "bruise"; 聞く can be "listen to / attend / sit through", not only "ask".
 - Emphatic も after an amount = "as much as / a whole" (87,000円も = a whole 87,000 yen, a complaint about how big it is), not additive "too/also".
 - Onomatopoeia conveys a sensation, not a literal word: ぷりぷり = springy/bouncy/jiggly, not "plump".
-- Transliterate a katakana name to the name actually meant (あんそにー = "Anthony"), and keep any English already embedded in the source as-is.
+- Transliterate a katakana name to the name actually meant (あんそにー = "Anthony"); render Japanese personal names in English order — given name first (田中碧 → "Ao Tanaka", not "Tanaka Ao"); and keep any English already embedded in the source as-is.
 
 ${PROMPT_OUTPUT_FORMAT}`;
   }
