@@ -19,6 +19,7 @@ import {
   translateParamsFor,
 } from '../app/api/translate/utils';
 import { buildJudgePrompt, parseVerdict } from './judge';
+import { addUsage, type UsageTotals } from './usage';
 import type { CaseResult, GoldenCase, RunSample, Verdict } from './types';
 
 // The translator mirrors production: per-direction by default (Haiku EN→JP,
@@ -40,6 +41,8 @@ const JUDGE_MODEL = 'claude-sonnet-4-6';
 const REPEATS = Math.max(1, Number(process.env.EVAL_REPEATS ?? '1') || 1);
 
 const EVALS_DIR = resolve(import.meta.dirname);
+
+let usage: UsageTotals = {};
 
 function textOf(msg: Anthropic.Message): string {
   return msg.content
@@ -63,6 +66,7 @@ async function translate(client: Anthropic, c: GoldenCase): Promise<string> {
     system: buildSystemPrompt(c.tone, toEnglish),
     messages: [{ role: 'user', content: userInstruction }],
   });
+  usage = addUsage(usage, model, msg.usage);
 
   return textOf(msg).split('[[EXPLANATION]]')[0].replace('[[MAX_TOKENS]]', '').trim();
 }
@@ -74,6 +78,7 @@ async function judge(client: Anthropic, c: GoldenCase, output: string): Promise<
     temperature: 0,
     messages: [{ role: 'user', content: buildJudgePrompt(c.input, c.tone, c.watch_for, output) }],
   });
+  usage = addUsage(usage, JUDGE_MODEL, msg.usage);
   return parseVerdict(textOf(msg));
 }
 
@@ -171,6 +176,11 @@ async function main(): Promise<void> {
 
   console.log(`\n${passed}/${results.length} passed · avg score ${(Math.round(avg * 100) / 100).toFixed(2)}`);
 
+  console.log('\n--- token usage ---');
+  for (const [model, u] of Object.entries(usage)) {
+    console.log(`  ${model}: ${u.calls} calls · ${u.input_tokens} in / ${u.output_tokens} out`);
+  }
+
   const scorecardsDir = resolve(EVALS_DIR, 'scorecards');
   mkdirSync(scorecardsDir, { recursive: true });
   const stamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -186,6 +196,7 @@ async function main(): Promise<void> {
         passed,
         total: results.length,
         avgScore: Math.round(avg * 100) / 100,
+        usage,
         results,
       },
       null,
