@@ -202,6 +202,7 @@ describe('buildSystemPrompt', () => {
       - Let context fix word sense, not the first dictionary gloss: 焼く is "tan/sunbathe" in a sun/skin context (and 痛い there is sunburn), but "grill/bake" with food; 傷む for food is "go bad/spoil", not "bruise"; 聞く can be "listen to / attend / sit through", not only "ask".
       - Emphatic も after an amount = "as much as / a whole" (87,000円も = a whole 87,000 yen, a complaint about how big it is), not additive "too/also".
       - Onomatopoeia conveys a sensation, not a literal word: ぷりぷり = springy/bouncy/jiggly, not "plump".
+      - A negated verb means the thing doesn't happen at all — don't soften it into "a little" or "low": お金かけないポーカー is poker played for no money ("not for money"), never "low-stakes".
       - Transliterate a katakana name to the name actually meant (あんそにー = "Anthony"); render Japanese personal names in English order — given name first (田中碧 → "Ao Tanaka", not "Tanaka Ao"); and keep any English already embedded in the source as-is.
 
       Output format — follow exactly:
@@ -230,7 +231,7 @@ describe('buildSystemPrompt', () => {
       - Casual especially: use real spoken/texting language — contractions, natural slang, dropped subjects, and sentence-final particles (ね／よ／じゃん／っしょ). Render net-slang and abbreviations idiomatically (e.g. 草 → "lol", りょ → "got it"), never literally.
       - Person reference: Japanese usually omits both "I" and "you" — drop them whenever context makes them clear. Avoid inserting second-person pronouns; お前／あなた／きみ read as rough, distant, or unnatural in normal texting, where people omit "you" or just use the person's bare name (add さん／くん／ちゃん only when the relationship or context specifically calls for it). Don't add first-person 私／僕／俺 unless the source emphasizes it, and keep whichever you pick consistent.
       - Gendered speech: default to gender-neutral casual unless the source signals the speaker's gender. Avoid strongly feminine sentence-final particles (〜わ／〜だわ／〜かしら／〜のよ) and exaggerated masculine ones (〜だぜ／〜だぞ); prefer neutral 〜よ／〜ね／〜な or plain form (で十分だよ, not で十分だわ).
-      - Place and proper names: use the standard Japanese name, not a katakana spelling of the English, when one exists (Korea → 韓国, not コリア; China → 中国). Names already standard in Japanese (アメリカ, ドイツ, ニューヨーク) stay as they are.
+      - Place and proper names: use the standard Japanese name, not a katakana spelling of the English, when one exists (Korea → 韓国, not コリア; China → 中国). Names already standard in Japanese (アメリカ, ドイツ, ニューヨーク) stay as they are. A slang brand nickname becomes the brand's own Japanese nickname (maccas = McDonald's → マック), never a phonetic transliteration of the slang (マックス reads as the name "Max", not McDonald's).
       - Preserve emoji and kaomoji and the feeling they carry. Keep proper nouns and numbers intact.
       - Currency: infer an unstated currency from the source, never the target. An English speaker's bare money amount (1k, 500, 20 bucks) means dollars — render it as ドル (1000ドル), never default to 円. Don't convert between currencies.
       - Output only the message itself — no quotes, notes, or alternatives inside the translation.
