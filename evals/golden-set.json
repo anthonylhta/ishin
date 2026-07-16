@@ -392,5 +392,33 @@
     "tone": "casual",
     "watch_for": "Direction JP→EN. お金かけないポーカー is poker with no money on the line ('poker without betting money' / 'not for money') — never 'low-stakes', which implies real stakes and kills the contrast with grinding at real-money roulette. Keep the kaomoji ( ᵒ̴̶̷̥́ωᵒ̴̶̷̣̥̀ ) as-is.",
     "regression_of": "mined from production 2026-07-08"
+  },
+  {
+    "id": "jp-en-moratta-giver-not-vocative",
+    "input": "おねえちゃんお金もらったからやる",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. おねえちゃん is the dropped-particle giver of もらった (おねえちゃん[に/から]お金もらった) — the reading is 'my (older) sister gave me money / I got money from my sister, so I'll do it', never a vocative 'sis' being addressed ('I got money, sis').",
+    "regression_of": "mined from production 2026-07-16"
+  },
+  {
+    "id": "before-tax-income-zeibikimae",
+    "input": "yeah if i work 5 days i like around 1700aud before tax so thats why im doing this for now lol",
+    "tone": "casual",
+    "watch_for": "'before tax' on a salary must be 税引き前 or 額面 — never 税抜き (or 税込), which are retail sales-tax price terms. The currency reads naturally as 豪ドル or 1700ドル; spelled-out オーストラリアドル is acceptable but stiff.",
+    "regression_of": "mined from production 2026-07-16"
+  },
+  {
+    "id": "no-invented-hearsay-rashii",
+    "input": "my sisters doing a eu summer trip lol, shes in london now",
+    "tone": "casual",
+    "watch_for": "The source states 'shes in london now' as a directly known fact — the Japanese must not add a hearsay/inference marker: 今ロンドンにいる(よ), never 今ロンドンにいるらしい／みたい／なんだって.",
+    "regression_of": "mined from production 2026-07-16"
+  },
+  {
+    "id": "casual-left-not-saru",
+    "input": "she went on my lap and then bit me and left",
+    "tone": "casual",
+    "watch_for": "'left' in friend-casual register is 行っちゃった／どっか行った／いなくなった — never the literary 去る (去った・去ってった), which is the core failure here. The clause flow should read like a friend texting (e.g. 膝に乗ってきて噛んできて、そのまま行っちゃった).",
+    "regression_of": "mined from production 2026-07-16"
   }
 ]
