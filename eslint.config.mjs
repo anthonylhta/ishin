@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Hidden directories (VCS, editor, and local tooling state).
+    "**/.*/**",
   ]),
 ]);
 
