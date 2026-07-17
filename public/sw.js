@@ -1,10 +1,10 @@
-// Minimal hand-rolled service worker for Tone Translator.
+// Minimal hand-rolled service worker for Ishin.
 // Goals: installability + fast repeat loads + a graceful offline page.
 // Deliberately conservative: never caches HTML navigations (the app is
 // auth-driven and force-dynamic, so a cached page could show the wrong state)
 // and never touches /api (translations stream and must hit the network).
 
-const VERSION = 'v2'; // v2: flush ~89 deploys of accumulated hashed assets
+const VERSION = 'v3'; // v3: Ishin rebrand — flush caches
 const STATIC_CACHE = `tt-static-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE = [OFFLINE_URL, '/icon-192.png', '/icon-512.png'];

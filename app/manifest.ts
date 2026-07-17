@@ -2,11 +2,12 @@ import type { MetadataRoute } from 'next';
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: 'Tone Translator',
-    short_name: 'Tone',
+    name: 'Ishin',
+    short_name: 'Ishin',
     description:
-      'Fast, natural-sounding Japanese ⇄ English translator with tone control.',
-    start_url: '/',
+      'Cross-cultural Japanese ⇄ English communication: a free casual/polite translator, and a business review layer that catches messages that are correct but culturally wrong.',
+    id: '/personal',
+    start_url: '/personal',
     display: 'standalone',
     background_color: '#0D0D0B',
     theme_color: '#0D0D0B',
