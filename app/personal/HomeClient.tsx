@@ -323,11 +323,18 @@ export default function HomeClient() {
             <h1 style={{
               fontSize: 'clamp(1.05rem, 4.5vw, 1.25rem)',
               margin: 0,
-              fontFamily: 'var(--font-serif)',
               fontWeight: 600,
               letterSpacing: '1px',
               whiteSpace: 'nowrap',
-            }}>TONE TRANSLATOR</h1>
+            }}>
+              {/* Plain anchor by design — this client component stays router-free
+                  (no next/link), so it does a full navigation to the marketing homepage. */}
+              {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+              <a href="/" style={{ color: 'inherit', textDecoration: 'none' }}>
+                <span style={{ fontFamily: 'var(--font-serif)', marginRight: '0.4em' }}>以心</span>
+                ISHIN
+              </a>
+            </h1>
             <div style={{
               fontSize: '0.62rem',
               color: 'var(--text-secondary)',

@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     if (isPaused()) {
       return NextResponse.json(
-        { error: 'Tone Translator is paused right now — please check back soon.' },
+        { error: 'Ishin is paused right now — please check back soon.' },
         { status: 503 }
       );
     }

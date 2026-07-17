@@ -22,13 +22,14 @@ const shipporiMincho = Shippori_Mincho({
 });
 
 export const metadata: Metadata = {
-  title: 'Tone Translator | Japanese Politeness Engine',
-  description: 'Translate between Japanese and English with cultural precision',
-  applicationName: 'Tone Translator',
+  title: 'Ishin — Japanese ⇄ English that lands as intended',
+  description:
+    'Cross-cultural Japanese ⇄ English communication: a free casual/polite translator, and a business review layer that catches messages that are correct but culturally wrong.',
+  applicationName: 'Ishin',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'Tone',
+    title: 'Ishin',
   },
   icons: {
     icon: [
@@ -52,7 +53,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider afterSignOutUrl="/">
+    <ClerkProvider afterSignOutUrl="/personal">
       <html lang="en" className="dark">
         <body className={`${dmSans.variable} ${shipporiMincho.variable} font-sans antialiased`}>
             {children}
