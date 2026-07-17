@@ -6,7 +6,8 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: 'Ishin',
     description:
       'Cross-cultural Japanese ⇄ English communication: a free casual/polite translator, and a business review layer that catches messages that are correct but culturally wrong.',
-    id: '/personal',
+    // Must stay '/' forever — it pins the identity existing installs are keyed to.
+    id: '/',
     start_url: '/personal',
     display: 'standalone',
     background_color: '#0D0D0B',
