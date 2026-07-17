@@ -464,7 +464,7 @@ export default function HomeClient() {
                 Built by Anthony Ta
                 {' · '}
                 <a
-                  href="https://github.com/anthonylhta/tone-translator"
+                  href="https://github.com/anthonylhta/ishin"
                   target="_blank"
                   rel="noopener noreferrer"
                   style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
