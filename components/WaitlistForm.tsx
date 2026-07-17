@@ -2,10 +2,7 @@
 
 import { useState } from 'react';
 import { SpinnerIcon } from '@/components/Icons';
-
-// Shape-only client pre-validation. The server is authoritative (app/api/waitlist);
-// this just spares an obviously-bad submit a round trip.
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+import { isValidEmail } from '@/app/api/waitlist/utils';
 
 type Status = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -25,7 +22,7 @@ const inputStyle: React.CSSProperties = {
 export default function WaitlistForm() {
   const [email, setEmail] = useState('');
   const [context, setContext] = useState('');
-  const [website, setWebsite] = useState(''); // honeypot — real users never see this
+  const [formExtra, setFormExtra] = useState(''); // honeypot — real users never see this
   const [status, setStatus] = useState<Status>('idle');
   const [error, setError] = useState('');
 
@@ -33,7 +30,7 @@ export default function WaitlistForm() {
     e.preventDefault();
     if (status === 'submitting') return;
 
-    if (!EMAIL_RE.test(email.trim())) {
+    if (!isValidEmail(email.trim())) {
       setStatus('error');
       setError("That email doesn't look right.");
       return;
@@ -46,7 +43,7 @@ export default function WaitlistForm() {
       const res = await fetch('/api/waitlist', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.trim(), context, website }),
+        body: JSON.stringify({ email: email.trim(), context, form_extra: formExtra }),
       });
       const data = await res.json().catch(() => ({}));
 
@@ -96,17 +93,19 @@ export default function WaitlistForm() {
       />
 
       {/* Honeypot: hidden from real users, catches bots that fill every field.
-          Visually removed, off the tab order, and hidden from assistive tech. */}
-      <input
-        type="text"
-        name="website"
-        value={website}
-        onChange={(e) => setWebsite(e.target.value)}
-        tabIndex={-1}
-        autoComplete="off"
-        aria-hidden="true"
-        style={{ position: 'absolute', left: '-9999px', width: '1px', height: 0, opacity: 0, pointerEvents: 'none' }}
-      />
+          Not rendered (display:none) so autofill skips it, off the tab order,
+          and hidden from assistive tech. */}
+      <div style={{ display: 'none' }}>
+        <input
+          type="text"
+          name="form_extra"
+          value={formExtra}
+          onChange={(e) => setFormExtra(e.target.value)}
+          tabIndex={-1}
+          autoComplete="off"
+          aria-hidden="true"
+        />
+      </div>
 
       <button
         type="submit"

@@ -58,7 +58,7 @@ describe('normalizeEmail', () => {
 
 describe('parseWaitlistBody', () => {
   it('parses a happy-path body', () => {
-    const result = parseWaitlistBody({ email: 'a@b.co', context: 'we email JP partners daily', website: '' });
+    const result = parseWaitlistBody({ email: 'a@b.co', context: 'we email JP partners daily', form_extra: '' });
     expect(result).toEqual({
       email: 'a@b.co',
       context: 'we email JP partners daily',
@@ -77,13 +77,17 @@ describe('parseWaitlistBody', () => {
     expect(result.context).toHaveLength(MAX_CONTEXT_CHARS);
   });
 
-  it('trips the honeypot when website is a non-empty string', () => {
-    expect(parseWaitlistBody({ email: 'a@b.co', website: 'http://spam.example' }).honeypotTripped).toBe(true);
+  it('trips the honeypot when form_extra is a non-empty string', () => {
+    expect(parseWaitlistBody({ email: 'a@b.co', form_extra: 'http://spam.example' }).honeypotTripped).toBe(true);
   });
 
-  it('does not trip the honeypot for an empty or missing website', () => {
-    expect(parseWaitlistBody({ email: 'a@b.co', website: '' }).honeypotTripped).toBe(false);
+  it('does not trip the honeypot for an empty or missing form_extra', () => {
+    expect(parseWaitlistBody({ email: 'a@b.co', form_extra: '' }).honeypotTripped).toBe(false);
     expect(parseWaitlistBody({ email: 'a@b.co' }).honeypotTripped).toBe(false);
+  });
+
+  it('does not trip the honeypot for the legacy website field (the key moved)', () => {
+    expect(parseWaitlistBody({ email: 'a@b.co', website: 'http://spam.example' }).honeypotTripped).toBe(false);
   });
 
   it('degrades missing fields to defaults', () => {
@@ -91,7 +95,7 @@ describe('parseWaitlistBody', () => {
   });
 
   it('tolerates malformed field types', () => {
-    const result = parseWaitlistBody({ email: 123, context: { nope: true }, website: 42 });
+    const result = parseWaitlistBody({ email: 123, context: { nope: true }, form_extra: 42 });
     expect(result).toEqual({ email: '', context: null, honeypotTripped: false });
   });
 

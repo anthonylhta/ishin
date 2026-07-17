@@ -24,7 +24,7 @@ export interface ParsedWaitlistBody {
 
 // Tolerant parse: any missing/malformed field degrades to a sensible default
 // rather than throwing. context is trimmed and hard-capped (truncated, not
-// rejected); the honeypot trips when a bot fills the hidden `website` field.
+// rejected); the honeypot trips when a bot fills the hidden `form_extra` field.
 export function parseWaitlistBody(body: unknown): ParsedWaitlistBody {
   const obj = (body && typeof body === 'object') ? (body as Record<string, unknown>) : {};
 
@@ -36,7 +36,7 @@ export function parseWaitlistBody(body: unknown): ParsedWaitlistBody {
     if (trimmed.length > 0) context = trimmed.slice(0, MAX_CONTEXT_CHARS);
   }
 
-  const honeypotTripped = typeof obj.website === 'string' && obj.website.length > 0;
+  const honeypotTripped = typeof obj.form_extra === 'string' && obj.form_extra.length > 0;
 
   return { email, context, honeypotTripped };
 }
