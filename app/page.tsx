@@ -207,7 +207,7 @@ export default function Home() {
           }}
         >
           <a
-            href="https://github.com/anthonylhta/tone-translator"
+            href="https://github.com/anthonylhta/ishin"
             target="_blank"
             rel="noopener noreferrer"
             className="ishin-foot-link"
