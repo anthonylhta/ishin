@@ -133,6 +133,18 @@ textarea::placeholder {
   animation: blink 0.8s ease-in-out infinite;
 }
 
+/* Homepage (/) path cards + footer links. Base styling applies everywhere
+   (including touch, so the footer links keep their color and stay un-underlined);
+   the hover shifts live in the hover-guard block below. */
+.ishin-card {
+  transition: border-color 0.15s ease;
+}
+.ishin-foot-link {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+}
+
 /* Message action row (copy/delete): reveal on hover — but ONLY on pointer
    devices. On touch (hover: none) there's no hover, so the rule doesn't apply
    and the buttons stay visible (otherwise they'd be unreachable on a phone).
@@ -146,5 +158,11 @@ textarea::placeholder {
   .msg-row:hover .msg-actions,
   .msg-row:focus-within .msg-actions {
     opacity: 1;
+  }
+  .ishin-card:hover {
+    border-color: var(--border-gold);
+  }
+  .ishin-foot-link:hover {
+    color: var(--accent-gold);
   }
 }

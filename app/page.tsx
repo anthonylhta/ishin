@@ -17,27 +17,6 @@ export default function Home() {
         zIndex: 1,
       }}
     >
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-            .ishin-card {
-              transition: border-color 0.15s ease;
-            }
-            .ishin-card:hover {
-              border-color: var(--border-gold);
-            }
-            .ishin-foot-link {
-              color: var(--text-secondary);
-              text-decoration: none;
-              transition: color 0.15s ease;
-            }
-            .ishin-foot-link:hover {
-              color: var(--accent-gold);
-            }
-          `,
-        }}
-      />
-
       <div style={{ width: '100%', maxWidth: '720px', textAlign: 'center' }}>
         {/* Wordmark */}
         <div
