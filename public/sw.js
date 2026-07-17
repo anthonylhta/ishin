@@ -4,7 +4,7 @@
 // auth-driven and force-dynamic, so a cached page could show the wrong state)
 // and never touches /api (translations stream and must hit the network).
 
-const VERSION = 'v3'; // v3: Ishin rebrand — flush caches
+const VERSION = 'v4'; // v4: seal brand icons — flush the precached torii set
 const STATIC_CACHE = `tt-static-${VERSION}`;
 const OFFLINE_URL = '/offline.html';
 const PRECACHE = [OFFLINE_URL, '/icon-192.png', '/icon-512.png'];

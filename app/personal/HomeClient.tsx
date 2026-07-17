@@ -6,7 +6,7 @@ import { useCloudStorage, isPersistedId } from '@/hooks/useCloudStorage';
 import DateGroup from '@/components/DateGroup';
 import Toast from '@/components/Toast';
 import ConfirmModal from '@/components/ConfirmModal';
-import { SendIcon, SpinnerIcon, ChevronIcon, ToriiMark, WarningIcon } from '@/components/Icons';
+import { SendIcon, SpinnerIcon, ChevronIcon, SealMark, WarningIcon } from '@/components/Icons';
 
 const TONES = [
   { id: 'casual', kanji: '普通', label: 'CASUAL' },
@@ -432,11 +432,11 @@ export default function HomeClient() {
             </div>
           ) : groupedMessages.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-tertiary)' }}>
-              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}><ToriiMark size={56} /></div>
-              <div style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '4px' }}>
+              <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'center' }}><SealMark /></div>
+              <div style={{ fontSize: '15px', fontWeight: 500, color: 'var(--text-primary)', marginBottom: '6px' }}>
                 Translate between Japanese and English
               </div>
-              <div style={{ fontSize: '12px', marginBottom: '28px' }}>
+              <div style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '32px' }}>
                 or check whether your Japanese sounds natural
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', marginBottom: '16px' }}>
