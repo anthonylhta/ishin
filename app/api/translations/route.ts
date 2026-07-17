@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { auth } from '@clerk/nextjs/server';
+import { TONES } from '../translate/utils';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
@@ -10,7 +11,7 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
   auth: { persistSession: false },
 });
 
-const VALID_TONES = ['casual', 'polite', 'formal', 'blunt'] as const;
+const VALID_TONES = Object.keys(TONES);
 const MAX_USER_TEXT = 2000;
 const MAX_ASSISTANT_TEXT = 4000;
 const MAX_EXPLANATION = 1000;

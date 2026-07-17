@@ -63,22 +63,10 @@
     "watch_for": "Natural texting phrasing (りょ / 了解 / 向かってる), not a stiff literal translation."
   },
   {
-    "id": "register-keigo-formal",
-    "input": "Thank you for your continued support.",
-    "tone": "formal",
-    "watch_for": "Proper keigo (いつもお世話になっております style). No plain form leaking into formal."
-  },
-  {
     "id": "register-polite-desu-masu",
     "input": "Could you send me the file when you get a chance?",
     "tone": "polite",
     "watch_for": "Consistent です/ます polite request (送っていただけますか style). No plain form, no over-formal keigo."
-  },
-  {
-    "id": "register-blunt-terse",
-    "input": "Stop. Don't do that.",
-    "tone": "blunt",
-    "watch_for": "Terse, curt imperative (やめろ / それやめろ). Reads abrupt/commanding, not softened or polite."
   },
   {
     "id": "direction-jp-to-en-casual",
@@ -217,13 +205,6 @@
     "tone": "casual",
     "watch_for": "Keep the self-amused, joking tone (wtf/lol) — e.g. なにこれ笑 / ブサイクすぎでしょ笑. Don't escalate to genuine disgust (気持ち悪い), which is stronger and more negative than the lighthearted 'ugly lol'.",
     "regression_of": "mined from production 2026-06-07"
-  },
-  {
-    "id": "formal-no-invented-apology",
-    "input": "hey im literally starving right now, you wanna get something to eat? i was thinking pasta",
-    "tone": "formal",
-    "watch_for": "Formal register is correct, but keep it natural spoken keigo — don't invent an apology (申し訳ございませんが) when the source has none, and don't bury it in business-email indirection. A friendly invitation, politely phrased.",
-    "regression_of": "mined from production 2026-05-28"
   },
   {
     "id": "jp-en-kiku-attend",
