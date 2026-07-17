@@ -11,8 +11,6 @@ import { SendIcon, SpinnerIcon, ChevronIcon, ToriiMark, WarningIcon } from '@/co
 const TONES = [
   { id: 'casual', kanji: '普通', label: 'CASUAL' },
   { id: 'polite', kanji: '丁寧', label: 'POLITE' },
-  { id: 'formal', kanji: '正式', label: 'FORMAL' },
-  { id: 'blunt', kanji: '直接', label: 'BLUNT' },
 ] as const;
 
 type ToneId = typeof TONES[number]['id'];

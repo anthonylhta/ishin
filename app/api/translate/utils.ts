@@ -5,8 +5,6 @@ export const RATE_WINDOW_MS = 60_000;
 export const TONES: Record<string, string> = {
   casual: 'casual (普通): how friends actually talk and text — plain form, contractions, slang, and sentence-final particles. Never textbook-stiff.',
   polite: 'polite (丁寧): です／ます form. The everyday-polite default with strangers and colleagues.',
-  formal: 'formal (正式): keigo — honorific and humble forms (尊敬語・謙譲語, ございます). Business, ceremonial, or deferential contexts.',
-  blunt: 'blunt (直接): terse and direct — abrupt plain forms or imperatives. Reads as curt or commanding.',
 };
 
 export const hits = new Map<string, { count: number; resetAt: number }>();
