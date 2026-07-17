@@ -173,8 +173,8 @@ describe('buildSystemPrompt', () => {
 
   // JP->EN (toEnglish=true) ignores the register entirely.
   it('omits the register and Japanese-grammar guidance when translating to English', () => {
-    const prompt = buildSystemPrompt('formal', true);
-    expect(prompt).not.toContain(TONES.formal);
+    const prompt = buildSystemPrompt('polite', true);
+    expect(prompt).not.toContain(TONES.polite);
     expect(prompt).not.toContain('来よ');
     expect(prompt).toContain('The input is Japanese');
   });
