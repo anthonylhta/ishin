@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import WaitlistForm from '@/components/WaitlistForm';
 import { WarningIcon } from '@/components/Icons';
+import SiteFooter from '@/components/SiteFooter';
 
 export const metadata: Metadata = {
   title: "Ishin for Business — catch the message that's correct but wrong",
@@ -36,6 +37,7 @@ const glossStyle: React.CSSProperties = {
 
 export default function BusinessPage() {
   return (
+    <>
     <main
       style={{
         position: 'relative',
@@ -231,5 +233,7 @@ export default function BusinessPage() {
         </p>
       </section>
     </main>
+    <SiteFooter />
+    </>
   );
 }
