@@ -1,20 +1,20 @@
 export const dynamic = 'force-dynamic';
 
 import Link from 'next/link';
+import SiteFooter from '@/components/SiteFooter';
 
 export default function Home() {
   return (
+    <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
     <main
       style={{
-        minHeight: '100dvh',
+        flex: 1,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
         padding: 'calc(48px + env(safe-area-inset-top)) 20px calc(40px + env(safe-area-inset-bottom))',
         boxSizing: 'border-box',
-        position: 'relative',
-        zIndex: 1,
       }}
     >
       <div style={{ width: '100%', maxWidth: '720px', textAlign: 'center' }}>
@@ -198,33 +198,9 @@ export default function Home() {
           </Link>
         </div>
 
-        {/* Footer */}
-        <footer
-          style={{
-            marginTop: '48px',
-            fontSize: '0.72rem',
-            color: 'var(--text-tertiary)',
-          }}
-        >
-          <a
-            href="https://github.com/anthonylhta/ishin"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ishin-foot-link"
-          >
-            GitHub
-          </a>
-          {' · '}
-          <a
-            href="https://www.linkedin.com/in/anthonylhta"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="ishin-foot-link"
-          >
-            LinkedIn
-          </a>
-        </footer>
       </div>
     </main>
+    <SiteFooter />
+    </div>
   );
 }

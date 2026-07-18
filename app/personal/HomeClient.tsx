@@ -475,14 +475,12 @@ export default function HomeClient() {
                 </a>
                 {' · '}
                 <a
-                  href="https://www.linkedin.com/in/anthonylhta"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/privacy"
                   style={{ color: 'var(--text-secondary)', textDecoration: 'none' }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--accent-gold)'; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-secondary)'; }}
                 >
-                  LinkedIn
+                  Privacy
                 </a>
               </div>
             </div>
