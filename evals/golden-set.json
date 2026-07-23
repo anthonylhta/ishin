@@ -401,5 +401,68 @@
     "tone": "casual",
     "watch_for": "'left' in friend-casual register is 行っちゃった／どっか行った／いなくなった — never the literary 去る (去った・去ってった), which is the core failure here. The clause flow should read like a friend texting (e.g. 膝に乗ってきて噛んできて、そのまま行っちゃった).",
     "regression_of": "mined from production 2026-07-16"
+  },
+  {
+    "id": "casual-synopsis-spoken-not-written",
+    "input": "its about a normal guy who ends up running a big drug business",
+    "tone": "casual",
+    "watch_for": "Describing a show in casual chat must sound spoken, not like a written synopsis: 'running a big drug business' is でかい麻薬ビジネス(を)やることになる — never the formal 運営する — and no flat narrator 〜話だ。 ending; expect e.g. 普通の人がでかい麻薬ビジネスやることになる話(だよ／なんだよね).",
+    "regression_of": "mined from production 2026-07-17"
+  },
+  {
+    "id": "jp-en-wara-becomes-lol",
+    "input": "そうなの！不倫相手の役なんだけど面白い笑",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. The sentence-final 笑 is a laugh marker and must be rendered as 'lol'/'haha' — never left as 笑 in the English output, and rendered exactly once (no 'lol … 笑' double).",
+    "regression_of": "mined from production 2026-07-18"
+  },
+  {
+    "id": "korean-name-katakana-han-so-hee",
+    "input": "isnt too hard to resist cheating if its han so hee lol",
+    "tone": "casual",
+    "watch_for": "'han so hee' is the Korean actress Han So-hee — in Japanese, katakana ハン・ソヒ. Never a kanji+katakana mashup like 韓ソヒ (reads 'Korea So-hee') and never invented kanji for a Korean name.",
+    "regression_of": "mined from production 2026-07-18"
+  },
+  {
+    "id": "you-have-to-addressee-explicit",
+    "input": "u have to eat this",
+    "tone": "casual",
+    "watch_for": "'u have to eat this' is aimed at the listener — the Japanese must address them (食べてみて／食べなよ／食べなきゃだめだよ). A bare これ食べなきゃ with no addressee marker reads as the speaker's own obligation ('I gotta eat this') and flips who eats.",
+    "regression_of": "mined from production 2026-07-18"
+  },
+  {
+    "id": "casual-when-clause-tara-not-jikan",
+    "input": "when I finish work there nothing open",
+    "tone": "casual",
+    "watch_for": "The time clause must read spoken: 仕事終わったら or 仕事終わる頃(には) — never the analytical 仕事終わる時間には. 'there nothing open' is casual typo-English for \"there's nothing open\": 何も開いてない／どこもやってない.",
+    "regression_of": "mined from production 2026-07-19"
+  },
+  {
+    "id": "jp-en-product-name-particle-ka",
+    "input": "もっちゅりんか",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. もっちゅりん is a product name (a mochi snack) — keep it as the name 'Motchurin', but the trailing か is the question/guess particle and must be rendered ('Motchurin?' / 'Is that Motchurin?' / 'Motchurin, huh?'). Bare romaji of the whole utterance ('Motchurinka') is the failure.",
+    "regression_of": "mined from production 2026-07-20"
+  },
+  {
+    "id": "generic-category-not-specifics",
+    "input": "i dont really like rice so i order noodle dishes",
+    "tone": "casual",
+    "watch_for": "'noodle dishes' is a generic category — keep it generic (麺類／麺のやつ／麺系), never invent specific dishes the source didn't name (ラーメンとかうどんとか).",
+    "regression_of": "mined from production 2026-07-20"
+  },
+  {
+    "id": "casual-often-not-hinpan",
+    "input": "whos taking u out on so many dates lol",
+    "tone": "casual",
+    "watch_for": "'so many dates' in casual texting is そんなに何回も／そんなしょっちゅう — never the bookish 頻繁に, which reads report-style in a friend text. デート(に)連れてって should stay natural spoken.",
+    "regression_of": "mined from production 2026-07-20"
+  },
+  {
+    "id": "red-beans-anko-real-word",
+    "input": "can u put something else instead of red beans",
+    "tone": "casual",
+    "watch_for": "'red beans' as a food is あんこ (sweet filling) or 小豆 — the output must use a real Japanese word; a garbled coinage like 赤えんどろ is a hard failure.",
+    "regression_of": "mined from production 2026-07-21"
   }
 ]
