@@ -464,5 +464,40 @@
     "tone": "casual",
     "watch_for": "'red beans' as a food is あんこ (sweet filling) or 小豆 — the output must use a real Japanese word; a garbled coinage like 赤えんどろ is a hard failure.",
     "regression_of": "mined from production 2026-07-21"
+  },
+  {
+    "id": "playful-complaint-no-omae",
+    "input": "ur eating everything i want to eat",
+    "tone": "casual",
+    "watch_for": "A playful complaint between friends keeps the pronoun dropped — 食べたいやつ全部食べてんじゃん／食べたいもん全部食べてるじゃん. Inserting お前 (お前が…食べてんじゃん) turns teasing into an accusation the source doesn't have; the added お前 is the failure.",
+    "regression_of": "mined from production 2026-07-31"
+  },
+  {
+    "id": "nominalizing-no-last-time",
+    "input": "its the last time I visit lily",
+    "tone": "casual",
+    "watch_for": "The verb clause is the topic and needs nominalizing の: リリーのとこ行くの(は)これで最後／リリーに会うのはこれが最後. A plain verb running straight into the noun (リリーのとこ行く最後だ) is an ungrammatical run-on — the missing の is the failure.",
+    "regression_of": "mined from production 2026-08-01"
+  },
+  {
+    "id": "juicy-tea-gossip-not-generic",
+    "input": "i want more juicy tea lol",
+    "tone": "casual",
+    "watch_for": "'tea' is gossip slang — ゴシップ／うわさ話／ネタ, with the juicy sense kept (もっとやばい話／濃いネタ). Flattening it to the generic 面白い話 loses the slang's specific sense and is the failure.",
+    "regression_of": "mined from production 2026-08-03"
+  },
+  {
+    "id": "good-body-no-stutter",
+    "input": "I want a good body so i can walk around naked and show everyone",
+    "tone": "casual",
+    "watch_for": "The output must read clean with no duplicated or dangling fragment — いい体になりたくて…, never a stutter like 体いい体になりたくて. Any duplicated word fragment at a clause head is the failure; the content itself translates straightforwardly in casual register.",
+    "regression_of": "mined from production 2026-08-04"
+  },
+  {
+    "id": "invitation-kina-not-koyo",
+    "input": "u can do it as well, come to nude beach with me",
+    "tone": "casual",
+    "watch_for": "The invitation 'come with me' must be a real casual form — 一緒に来なよ／来てよ／おいでよ. The classical volitional 来よ or the malformed 来よよ is a hard failure (the 来よ imperative resurfacing in production).",
+    "regression_of": "mined from production 2026-08-04"
   }
 ]
