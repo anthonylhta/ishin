@@ -499,5 +499,12 @@
     "tone": "casual",
     "watch_for": "The invitation 'come with me' must be a real casual form — 一緒に来なよ／来てよ／おいでよ. The classical volitional 来よ or the malformed 来よよ is a hard failure (the 来よ imperative resurfacing in production).",
     "regression_of": "mined from production 2026-08-04"
+  },
+  {
+    "id": "biggest-person-no-sorega",
+    "input": "thats the biggest japanese person i seen",
+    "tone": "casual",
+    "watch_for": "The English 'thats' must not surface as a demonstrative topic pointing at a person — それが／あれが一番でかい日本人だ(わ) reads like describing an object and is the failure, as is dropping the 'i seen' experience nuance. Natural casual drops the demonstrative and restructures: 今まで(見た中)で一番でかい日本人だな or こんなでかい日本人見たことない.",
+    "regression_of": "mined from production 2026-08-06"
   }
 ]
