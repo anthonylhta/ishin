@@ -555,5 +555,96 @@
     "tone": "casual",
     "watch_for": "Xにしか騙されない names X as the only one who can fool the speaker: 'Only Lily can fool me' / 'I only get fooled by Lily' / 'Nobody but Lily can fool me'. Turning it into a conditional about an unstated 'it' ('I'd only fall for it if it were Lily') is the failure. The embedded 'lily' stays 'Lily'.",
     "regression_of": "mined from production 2026-08-25"
+  },
+  {
+    "id": "aman-hotel-katakana-not-kanji",
+    "input": "is aman the best hotel in tokyo?",
+    "tone": "casual",
+    "watch_for": "Aman is a hotel brand and stays katakana — アマンって東京で一番いいホテルなの？／アマンって東京で一番いいホテル？. Guessing kanji for it (天人) is the failure, a lapse of the foreign-name-katakana rule on a lowercase brand name. 'tokyo' is 東京, not spelled out in kana.",
+    "regression_of": "mined from production 2026-08-27"
+  },
+  {
+    "id": "jp-en-tebura-empty-handed-not-hands-free",
+    "input": "普段は手ぶらだけど旅行で手ぶらやったことない\n国内だから確かにそれでもいいんだけどさ",
+    "tone": "casual",
+    "watch_for": "手ぶら is 'empty-handed' / 'with no bags' / 'travelling light', not 'hands-free' (a headset word). Natural: 'I usually go out empty-handed, but I've never travelled with no bags. / It's domestic so honestly that'd be fine, but still…'. Rendering it as 'the hands-free thing' / 'hands-free travel' is the failure.",
+    "regression_of": "mined from production 2026-08-30"
+  },
+  {
+    "id": "jp-en-single-rendering-konnan-janai",
+    "input": "こんなんじゃない",
+    "tone": "casual",
+    "watch_for": "One committed line — 'This isn't it.' or 'Not like this.' or 'This isn't how it's supposed to be.' Offering two slash-separated candidates (\"This isn't it\" / \"This isn't how…\") or wrapping the line in quotation marks is an output-format failure. The input is short but the format expectation is determinable (the もっちゅりんか bar).",
+    "regression_of": "mined from production 2026-09-03"
+  },
+  {
+    "id": "dream-boyfriend-listener-marked",
+    "input": "u had a new boyfriend and it was some muscle monster guy and he tried to fight me, idk what this dream even was about lol",
+    "tone": "casual",
+    "watch_for": "The boyfriend is the listener's, and standalone Japanese must say so — お前(に)新しい彼氏できてて／お前の新しい彼氏が…. A subjectless 新しい彼氏ができてて reads as the speaker's own boyfriend and is the failure. Marking the listener once is enough; 俺に喧嘩吹っかけてきた／喧嘩売ってきた and マジ何の夢だったんだろ笑 are fine as-is. Do not add 'in the dream' as an event the source doesn't narrate.",
+    "regression_of": "mined from production 2026-09-03"
+  },
+  {
+    "id": "idk-why-always-you-keeps-wondering",
+    "input": "idk why its always u",
+    "tone": "casual",
+    "watch_for": "'idk why' is bewildered musing and must survive — なんでいつもお前なんだろ／なんかいつもお前なんだよな. Flattening it into a causal statement いつもお前だからな (as if answering 'because it's always you') drops the wondering and is the failure. 'u' is the predicate here, so お前／君 is acceptable — the pronoun is not the issue.",
+    "regression_of": "mined from production 2026-09-03"
+  },
+  {
+    "id": "thought-you-never-dream-no-reported-speech",
+    "input": "i thought u never dream",
+    "tone": "casual",
+    "watch_for": "'I thought X' is the speaker's own assumption — 夢見ないと思ってた／夢見ないんだと思ってた／え、夢見ないんじゃなかったの？. Rewriting it as reported speech 夢見ないって言ってなかった？ invents a past statement by the listener and is the failure (no-invented-nuance family).",
+    "regression_of": "mined from production 2026-09-03"
+  },
+  {
+    "id": "usually-fudan-not-futsuu",
+    "input": "what do u dream about usually",
+    "tone": "casual",
+    "watch_for": "Habitual 'usually' is 普段／いつも — 普段どんな夢見るの？／いつも何の夢見てんの？. 普通 is 'normally / ordinarily' in the sense of normalcy, so 普通何の夢見るの？ reads as 'what would a normal person dream' and is the failure.",
+    "regression_of": "mined from production 2026-09-03"
+  },
+  {
+    "id": "take-day-off-listener-not-volitional",
+    "input": "take 1 more day off",
+    "tone": "casual",
+    "watch_for": "Listener-directed advice — もう1日休みなよ／もう1日休んだら？／あと1日休みとりな. The volitional とろう (あと1日休みとろう, 'let's take') makes it inclusive or self-directed and is the failure — the listener-directed rule from the you-have-to case, in imperative form.",
+    "regression_of": "mined from production 2026-09-04"
+  },
+  {
+    "id": "all-the-men-not-minna",
+    "input": "why all the men acting like that lol",
+    "tone": "casual",
+    "watch_for": "'the men' stays gendered and specific — なんで男(の人)みんなあんな感じなの笑／男ってなんでみんなああなんだろ笑. Genericizing the subject to みんな (everyone) — なんでみんなそんな感じなんだよ笑 — loses who is being talked about and is the failure.",
+    "regression_of": "mined from production 2026-09-05"
+  },
+  {
+    "id": "jp-en-shibuya-nimo-also-branch",
+    "input": "渋谷にもあったこのお店意外と並んでた",
+    "tone": "casual",
+    "watch_for": "にも says the shop is also in Shibuya (another branch) and the 'also/too' must survive — 'This place was in Shibuya too, and there was a surprisingly long line' / 'This place has a Shibuya branch too and it was surprisingly packed'. Dropping the 'too' so Shibuya reads as the only location ('There was a longer line at this place in Shibuya than I expected') is the failure.",
+    "regression_of": "mined from production 2026-09-05"
+  },
+  {
+    "id": "every-time-try-no-tamenakya-contraction",
+    "input": "everytime i try a new drink or something its always ass, i always regret trying something",
+    "tone": "casual",
+    "watch_for": "試す is a godan verb: 試さなきゃ(よかった). The ら-row contraction 試んなきゃ (modelled on わかんない／やんなきゃ) does not exist for 試す and is a hard grammar failure. Natural: 新しい飲み物とか試すたびにマジでハズレで、毎回試さなきゃよかったって後悔する. 'ass' as ハズレ／まずい is fine.",
+    "regression_of": "mined from production 2026-09-06"
+  },
+  {
+    "id": "random-people-shiranai-not-hen",
+    "input": "its first money i see without random people on it",
+    "tone": "casual",
+    "watch_for": "'random people' means strangers / people the speaker doesn't know — 知らない人／どっかの誰か. 変な人 (weird people) changes the meaning and is the failure. Natural: 知らない人が載ってないお札初めて見た／知らない人の顔が印刷されてないお金初めて見た.",
+    "regression_of": "mined from production 2026-09-06"
+  },
+  {
+    "id": "she-broke-mirror-third-party-marked",
+    "input": "she broke the mirror lol, i think she went a bit crazy seeing only me for a month lol",
+    "tone": "casual",
+    "watch_for": "The I/you-dropping rule does not cover a third-party 'she': standalone, the third party must be recoverable at least once — あの子鏡割っちゃった笑、1ヶ月俺しか見てなかったからちょっとおかしくなったんだと思う笑 (あの子／あいつ／彼女). A fully subjectless 鏡割っちゃった笑 reads as the speaker breaking it and is the failure. One mention is enough; the second clause may stay subjectless.",
+    "regression_of": "mined from production 2026-09-07"
   }
 ]
