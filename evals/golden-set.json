@@ -646,5 +646,75 @@
     "tone": "casual",
     "watch_for": "The I/you-dropping rule does not cover a third-party 'she': standalone, the third party must be recoverable at least once — あの子鏡割っちゃった笑、1ヶ月俺しか見てなかったからちょっとおかしくなったんだと思う笑 (あの子／あいつ／彼女). A fully subjectless 鏡割っちゃった笑 reads as the speaker breaking it and is the failure. One mention is enough; the second clause may stay subjectless.",
     "regression_of": "mined from production 2026-09-07"
+  },
+  {
+    "id": "protein-shake-purotein-not-tanpakushitsu",
+    "input": "if i dont drink protein shakes t",
+    "tone": "casual",
+    "watch_for": "'protein shake' is the everyday loanword プロテイン — プロテイン飲まないと／プロテイン飲まなきゃ. The literal タンパク質のシェイク is the failure; nobody calls it that. The trailing stray 't' is a typo fragment and is not scored; the sentence is an unfinished conditional and may stay unfinished (〜ないと).",
+    "regression_of": "mined from production 2026-09-10"
+  },
+  {
+    "id": "had-to-eat-more-no-invented-command",
+    "input": "I only eat 2 meals a day so if I had to eat more I ld throw up",
+    "tone": "casual",
+    "watch_for": "The conditional is the speaker's own hypothetical — 1日2食だから、それ以上食べたら吐くと思う／もっと食べなきゃいけなくなったら吐く. Inventing someone telling them to eat (もっと食べろって言われたら) adds an agent and a command the source doesn't have and is the failure. 'I ld' = 'I'd'.",
+    "regression_of": "mined from production 2026-09-10"
+  },
+  {
+    "id": "boob-job-houkyou-specific",
+    "input": "u need to get a boob job",
+    "tone": "casual",
+    "watch_for": "'boob job' is breast-augmentation surgery and stays specific — 豊胸しろよ／豊胸手術受けなよ／豊胸したほうがいいよ. A vague おっぱい大きくしたほうがいいよ (just 'make them bigger', no surgery) is the failure. The blunt 'u need to' may soften to 〜しなよ／〜したほうがいい — the register is secondary; the missing 豊胸 is what is scored.",
+    "regression_of": "mined from production 2026-09-12"
+  },
+  {
+    "id": "see-you-get-addicted-no-softening",
+    "input": "I want to see u get addicted to alcohol",
+    "tone": "casual",
+    "watch_for": "A taunt about the listener becoming addicted — 酒にハマるとこ見たい／アル中になるの見てみたい／酒に依存してくの見たいな. Failures: the progressive ハマってるとこ ('already hooked' rather than 'get addicted'), and an invented confiding beat like 見たいんだよね the source doesn't carry. Pronoun dropped as usual.",
+    "regression_of": "mined from production 2026-09-16"
+  },
+  {
+    "id": "all-girls-not-minna",
+    "input": "why are all girls like this",
+    "tone": "casual",
+    "watch_for": "'girls' stays gendered and specific — 女ってなんでみんなこうなの／女子ってなんでみんなこんななんだろ／なんで女の子みんなこうなの. Genericizing the subject to みんな (なんでみんなこんなんなの) drops 'girls' and is the failure — the same shape as all-the-men-not-minna.",
+    "regression_of": "mined from production 2026-09-16"
+  },
+  {
+    "id": "sweet-potato-as-flavour-direction",
+    "input": "ive had sweet potatoes just byself but never like a flavour for sweet things",
+    "tone": "casual",
+    "watch_for": "Two facts: eaten sweet potato on its own, but never as a flavour OF sweets (sweet-potato-flavoured desserts) — さつまいもそのまま食べたことはあるけど、スイーツの味としては食べたことない／さつまいも味のお菓子は食べたことない. Inverting the relation so the sweet potato is what gets a sweet seasoning (甘い系の味付けで食べた) is the failure. 'byself' = 'by itself'; 焼き芋 for the plain potato is acceptable.",
+    "regression_of": "mined from production 2026-09-17"
+  },
+  {
+    "id": "jp-en-causative-passive-causer",
+    "input": "お母さんが新しいの買ってさ、あんそにーに組み立てさせられてんの",
+    "tone": "casual",
+    "watch_for": "Direction JP→EN. Xに〜させられる is causative-passive: the に-marked person is the one MAKING the speaker do it — 'My mom bought a new one and Anthony's making me put it together' / 'and I'm getting made to assemble it by Anthony'. Casting Anthony as the one being forced ('Anthony's being made to put it together') inverts causer and causee and is the failure. あんそにー = Anthony.",
+    "regression_of": "mined from production 2026-09-17"
+  },
+  {
+    "id": "finished-fast-manner-not-reaction",
+    "input": "i finished doing it fast",
+    "tone": "casual",
+    "watch_for": "A manner statement about finishing quickly — すぐ終わった／早く終わらせた／サクッと終わった／速攻で終わった. Splitting it into a reaction pair やっちゃった、早かった ('done, that was quick' — and やっちゃった also reads as 'oops') changes the speech act and is the failure.",
+    "regression_of": "mined from production 2026-09-17"
+  },
+  {
+    "id": "showing-food-and-date-no-noto",
+    "input": "showing me food and its also a date",
+    "tone": "casual",
+    "watch_for": "Two clauses joined by 'and' use し／て／しかも — ご飯見せてくれるし、デートでもあるじゃん／飯見せてくれて、しかもデートじゃん. Using のと as a sentence connector (食べ物見せてくれるのと、それって…) is not how natives join clauses and is the failure. The fragmentary source has no explicit subject — leave it dropped. 食べ物 vs ご飯 is a minor nit, not scored.",
+    "regression_of": "mined from production 2026-09-18"
+  },
+  {
+    "id": "bad-energy-no-dawa",
+    "input": "stop it , this is too much bad energy",
+    "tone": "casual",
+    "watch_for": "Gender-neutral casual — やめてよ、空気悪すぎ／やめて、ネガティブすぎだって／マイナスな空気やばいな. Sentence-final 〜だわ (やばい空気だわ) is the feminine-marked ending the register rule forbids and is the failure — the third production recurrence of the shape. 'too much' carries as degree (〜すぎ).",
+    "regression_of": "mined from production 2026-09-26"
   }
 ]
