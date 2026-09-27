@@ -22,6 +22,21 @@ money** (it counts against the same budget the `TRANSLATIONS_PAUSED` kill-switch
 guards), and output is non-deterministic — so it is **manual only, never wired
 into CI**. Trust the *delta between runs*, not a single absolute score.
 
+## Spot check (no metered cost)
+
+```bash
+npm run spot -- --ids case-a,case-b                # golden cases by id, ×3
+npm run spot -- --cases probes.json --repeats 2    # ad hoc cases (same GoldenCase shape)
+```
+
+`spot.ts` is the per-change check between full runs: the same shipping prompt,
+production model tiers and judge rubric as the runner, but every call goes through
+`claude -p` (headless Claude Code) on the subscription, with API keys stripped from
+the child environment. Use it to baseline a prompt change before writing it (run
+on the unedited prompt), then again after. It's directional evidence — the CLI can't
+pin temperature or thinking, and the judge is the CLI's `sonnet` alias — so the full
+scorecard remains the real test.
+
 ## How it works
 
 - `golden-set.json` — the test cases. Each has `input`, `tone`, a `watch_for`
