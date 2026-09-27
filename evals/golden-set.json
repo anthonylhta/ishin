@@ -690,13 +690,6 @@
     "regression_of": "mined from production 2026-09-17"
   },
   {
-    "id": "jp-en-causative-passive-causer",
-    "input": "お母さんが新しいの買ってさ、あんそにーに組み立てさせられてんの",
-    "tone": "casual",
-    "watch_for": "Direction JP→EN. Xに〜させられる is causative-passive: the に-marked person is the one MAKING the speaker do it — 'My mom bought a new one and Anthony's making me put it together' / 'and I'm getting made to assemble it by Anthony'. Casting Anthony as the one being forced ('Anthony's being made to put it together') inverts causer and causee and is the failure. あんそにー = Anthony.",
-    "regression_of": "mined from production 2026-09-17"
-  },
-  {
     "id": "finished-fast-manner-not-reaction",
     "input": "i finished doing it fast",
     "tone": "casual",
