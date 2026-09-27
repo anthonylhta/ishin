@@ -651,7 +651,7 @@
     "id": "protein-shake-purotein-not-tanpakushitsu",
     "input": "if i dont drink protein shakes t",
     "tone": "casual",
-    "watch_for": "'protein shake' is the everyday loanword プロテイン — プロテイン飲まないと／プロテイン飲まなきゃ. The literal タンパク質のシェイク is the failure; nobody calls it that. The trailing stray 't' is a typo fragment and is not scored; the sentence is an unfinished conditional and may stay unfinished (〜ないと).",
+    "watch_for": "'protein shake' is the everyday loanword — プロテイン飲まないと／プロテイン飲まなきゃ, and プロテインシェイク is fine too. The literal タンパク質のシェイク (the nutrient word, タンパク質) is the failure; nobody calls the drink that. The trailing stray 't' is a typo fragment and is not scored; the sentence is an unfinished conditional and may stay unfinished (〜ないと／〜なかったら).",
     "regression_of": "mined from production 2026-09-10"
   },
   {
