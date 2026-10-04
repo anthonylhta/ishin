@@ -709,5 +709,19 @@
     "tone": "casual",
     "watch_for": "Gender-neutral casual — やめてよ、空気悪すぎ／やめて、ネガティブすぎだって／マイナスな空気やばいな. Sentence-final 〜だわ (やばい空気だわ) is the feminine-marked ending the register rule forbids and is the failure — the third production recurrence of the shape. 'too much' carries as degree (〜すぎ).",
     "regression_of": "mined from production 2026-09-26"
+  },
+  {
+    "id": "brains-rotted-gambling-no-omae",
+    "input": "ur brains rotted gambling every night",
+    "tone": "casual",
+    "watch_for": "A teasing callout keeps the pronoun dropped — 毎晩ギャンブルして脳みそ腐ってんじゃん／毎晩ギャンブルで脳みそ腐ったな. Inserting お前 for 'ur' (お前の脳みそ…) is the failure — the person-reference rule's possessive shape, a production recurrence of the お前 insertion. The time adverb belongs inside the clause (毎晩ギャンブルして…), not postposed after the final particle (…腐ってんじゃん毎晩). 'brains rotted' as 脳みそ腐る／脳が溶ける is fine; 'ur' is 'your', not 'you are'.",
+    "regression_of": "mined from production 2026-09-30"
+  },
+  {
+    "id": "feel-it-through-screen-no-kanjirareta",
+    "input": "i could feel it through the screenn",
+    "tone": "casual",
+    "watch_for": "Spoken casual — 画面越しに伝わってきた／画面越しでも伝わってきたよ／画面越しに感じた. The failure is the written, literal rendering: スクリーンを通して＋それが＋伝わってくるのが感じられた (perception 'could feel' turned into the potential form 感じられた on a nominalized clause, plus the essay-register を通して and a spelled-out それが). For a phone/TV screen in texting the everyday word is 画面, not the cinema word スクリーン. 'screenn' is a typo for 'screen' — don't score it.",
+    "regression_of": "mined from production 2026-10-04"
   }
 ]
